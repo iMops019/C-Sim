@@ -1,69 +1,31 @@
 #include "FourByTwelveCabPedal.h"
+#include "CabImpulseResponse.h"
 
-FourByTwelveCabPedal::FourByTwelveCabPedal()
+FourByTwelveCabPedal::FourByTwelveCabPedal() = default;
+
+void FourByTwelveCabPedal::prepare(double sampleRate, int maximumBlockSize, int numChannels)
 {
-    updateFilters();
-}
+    // Load before prepare(), as juce::dsp::Convolution recommends, so the
+    // IR is guaranteed active for the very first process() call.
+    convolution.loadImpulseResponse(CabImpulseResponse::generateFourByTwelveV30(sampleRate),
+                                     sampleRate,
+                                     juce::dsp::Convolution::Stereo::yes,
+                                     juce::dsp::Convolution::Trim::no,
+                                     juce::dsp::Convolution::Normalise::yes);
 
-void FourByTwelveCabPedal::prepare(double sampleRate, int /*maximumBlockSize*/, int /*numChannels*/)
-{
-    currentSampleRate = sampleRate;
-    updateFilters();
-
-    for (int ch = 0; ch < maxChannels; ++ch)
-    {
-        lowCut[ch].reset();
-        bodyResonance[ch].reset();
-        presencePeak[ch].reset();
-        highCut1[ch].reset();
-        highCut2[ch].reset();
-    }
-}
-
-void FourByTwelveCabPedal::updateFilters()
-{
-    // A 4x12 doesn't reproduce much below here.
-    auto lowCutCoeffs = juce::IIRCoefficients::makeHighPass(currentSampleRate, 90.0);
-
-    // Cab/speaker body thump.
-    auto bodyCoeffs = juce::IIRCoefficients::makePeakFilter(
-        currentSampleRate, 120.0, 1.2f, juce::Decibels::decibelsToGain(3.0f));
-
-    // Vintage 30's characteristic upper-mid bite.
-    auto presenceCoeffs = juce::IIRCoefficients::makePeakFilter(
-        currentSampleRate, 2800.0, 1.0f, juce::Decibels::decibelsToGain(4.0f));
-
-    // Two cascaded low-pass stages for a steeper, more speaker-like
-    // top-end roll-off than a single filter gives.
-    auto highCut1Coeffs = juce::IIRCoefficients::makeLowPass(currentSampleRate, 5500.0, 0.707f);
-    auto highCut2Coeffs = juce::IIRCoefficients::makeLowPass(currentSampleRate, 6500.0, 1.0f);
-
-    for (int ch = 0; ch < maxChannels; ++ch)
-    {
-        lowCut[ch].setCoefficients(lowCutCoeffs);
-        bodyResonance[ch].setCoefficients(bodyCoeffs);
-        presencePeak[ch].setCoefficients(presenceCoeffs);
-        highCut1[ch].setCoefficients(highCut1Coeffs);
-        highCut2[ch].setCoefficients(highCut2Coeffs);
-    }
+    juce::dsp::ProcessSpec spec {
+        sampleRate,
+        static_cast<juce::uint32>(juce::jmax(1, maximumBlockSize)),
+        static_cast<juce::uint32>(juce::jmax(1, numChannels))
+    };
+    convolution.prepare(spec);
 }
 
 void FourByTwelveCabPedal::process(float* const* channelData, int numChannels, int numSamples)
 {
-    updateFilters();
-
-    auto numChannelsToProcess = juce::jmin(numChannels, maxChannels);
-
-    for (int ch = 0; ch < numChannelsToProcess; ++ch)
-    {
-        auto* data = channelData[ch];
-
-        lowCut[ch].processSamples(data, numSamples);
-        bodyResonance[ch].processSamples(data, numSamples);
-        presencePeak[ch].processSamples(data, numSamples);
-        highCut1[ch].processSamples(data, numSamples);
-        highCut2[ch].processSamples(data, numSamples);
-    }
+    juce::dsp::AudioBlock<float> block(channelData, static_cast<size_t>(numChannels), static_cast<size_t>(numSamples));
+    juce::dsp::ProcessContextReplacing<float> context(block);
+    convolution.process(context);
 
     auto gain = level.get() / 100.0f;
     for (int ch = 0; ch < numChannels; ++ch)

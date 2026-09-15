@@ -24,6 +24,7 @@ target_sources(CSim
         Source/CleanAmpPedal.cpp
         Source/Peavey5150Pedal.cpp
         Source/FourByTwelveCabPedal.cpp
+        Source/CabImpulseResponse.cpp
         Source/KnobComponent.cpp
         Source/PitchDetector.cpp
         Source/TunerEngine.cpp
