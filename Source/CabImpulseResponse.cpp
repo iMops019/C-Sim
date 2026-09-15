@@ -14,18 +14,21 @@ namespace
         float decaySeconds;
     };
 
-    // Frequencies/amplitudes chosen to land where a V30-loaded 4x12
-    // actually resonates: a low body mode, a couple of cabinet/cone
-    // modes through the mids, and the characteristic upper-mid bite.
+    // Retuned for a tighter, more percussive "chug" character: shorter
+    // decay times throughout (less smear/boom), the low body mode pulled
+    // back so it doesn't dominate, and the 2.5-4kHz presence region pushed
+    // up so pick attack and upper-mid bite cut through instead of getting
+    // buried - that upper-mid energy is what was reading as "muffled".
     constexpr ResonantMode modes[] = {
-        { 100.0f,  0.90f, 0.055f },
-        { 180.0f,  0.55f, 0.045f },
-        { 400.0f,  0.35f, 0.035f },
-        { 800.0f,  0.28f, 0.025f },
-        { 1200.0f, 0.22f, 0.020f },
-        { 2500.0f, 0.38f, 0.016f },
-        { 3200.0f, 0.30f, 0.013f },
-        { 4500.0f, 0.14f, 0.009f },
+        { 100.0f,  0.55f, 0.030f },
+        { 180.0f,  0.35f, 0.025f },
+        { 400.0f,  0.25f, 0.020f },
+        { 800.0f,  0.22f, 0.016f },
+        { 1200.0f, 0.20f, 0.014f },
+        { 2500.0f, 0.55f, 0.012f },
+        { 3200.0f, 0.50f, 0.010f },
+        { 4000.0f, 0.35f, 0.008f },
+        { 4800.0f, 0.22f, 0.006f },
     };
 
     void renderChannel(float* data, int numSamples, double sampleRate, float phaseOffsetRadians, int sampleDelay)
@@ -44,13 +47,14 @@ namespace
             data[n] = value;
         }
 
-        // Sharp initial transient (cone/speaker attack) on top of the modes.
+        // Sharp initial transient (cone/speaker attack) on top of the modes -
+        // boosted a bit so pick attack stays percussive rather than smeared.
         auto attackSamples = juce::jmin(numSamples - sampleDelay, static_cast<int>(0.001 * sampleRate));
         for (int n = 0; n < attackSamples; ++n)
         {
             auto idx = sampleDelay + n;
             auto envelope = 1.0f - (static_cast<float>(n) / static_cast<float>(attackSamples));
-            data[idx] += envelope * envelope;
+            data[idx] += 1.3f * envelope * envelope;
         }
 
         // Fade the tail out so truncating the IR doesn't click.
@@ -69,7 +73,9 @@ namespace
 
 juce::AudioBuffer<float> generateFourByTwelveV30(double sampleRate)
 {
-    constexpr double durationSeconds = 0.12;
+    // Shorter than before (was 0.12s) - a tight rhythm cab shouldn't ring
+    // on for long after the transient.
+    constexpr double durationSeconds = 0.08;
     auto numSamples = juce::jmax(64, static_cast<int>(sampleRate * durationSeconds));
 
     juce::AudioBuffer<float> buffer(2, numSamples);
@@ -81,11 +87,13 @@ juce::AudioBuffer<float> generateFourByTwelveV30(double sampleRate)
     renderChannel(buffer.getWritePointer(1), numSamples, sampleRate, 0.35f,
                   static_cast<int>(0.0003 * sampleRate));
 
-    // Tame sub-bass build-up and harsh top end from the raw synthesis
-    // before it becomes the cab's fixed frequency response.
+    // Tame sub-bass build-up before it becomes the cab's fixed frequency
+    // response. Low cut raised slightly (was 80Hz) and the high cut opened
+    // up and de-resonated (was 5500Hz/Q0.9) so presence/bite survives
+    // instead of getting damped into a dull, muffled top end.
     juce::IIRFilter lowCut, highCut;
-    lowCut.setCoefficients(juce::IIRCoefficients::makeHighPass(sampleRate, 80.0));
-    highCut.setCoefficients(juce::IIRCoefficients::makeLowPass(sampleRate, 5500.0, 0.9f));
+    lowCut.setCoefficients(juce::IIRCoefficients::makeHighPass(sampleRate, 90.0));
+    highCut.setCoefficients(juce::IIRCoefficients::makeLowPass(sampleRate, 6500.0, 0.7f));
 
     for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
     {

@@ -1,6 +1,7 @@
 #include "MainComponent.h"
 #include "ReverbPedal.h"
 #include "NoiseGatePedal.h"
+#include "TransientShaperPedal.h"
 #include "CleanAmpPedal.h"
 #include "Peavey5150Pedal.h"
 #include "FourByTwelveCabPedal.h"
@@ -10,7 +11,8 @@ namespace
     std::vector<PedalListComponent::CatalogItem> makePedalCatalog()
     {
         return { { "Reverb", [] { return std::make_unique<ReverbPedal>(); } },
-                 { "Noise Gate", [] { return std::make_unique<NoiseGatePedal>(); } } };
+                 { "Noise Gate", [] { return std::make_unique<NoiseGatePedal>(); } },
+                 { "Transient Shaper", [] { return std::make_unique<TransientShaperPedal>(); } } };
     }
 
     std::vector<PedalListComponent::CatalogItem> makeAmpCatalog()
