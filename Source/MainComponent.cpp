@@ -56,10 +56,13 @@ void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& buffer
     auto* buffer = bufferToFill.buffer;
     auto numOutBuses = buffer->getNumChannels();
 
-    if (numInputChannels == 1 && numOutputChannels >= 2 && numOutBuses >= 2)
+    if (numInputChannels >= 1 && numOutputChannels >= 2 && numOutBuses >= 2)
     {
-        // Mono guitar input -> duplicated to both output channels, so a
-        // single-input interface still plays centred on both speakers/ears.
+        // Guitar is plugged into a single input jack (channel 1), but the
+        // device selector only lets you enable input channels in pairs, so
+        // channel 2 usually reads as "active" while carrying silence. Always
+        // duplicate channel 1 to both outputs so you hear it in both ears
+        // regardless of how many input channels the device reports active.
         buffer->copyFrom(1, bufferToFill.startSample, *buffer, 0, bufferToFill.startSample, bufferToFill.numSamples);
 
         for (int channel = 2; channel < numOutBuses; ++channel)
