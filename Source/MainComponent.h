@@ -2,6 +2,7 @@
 
 #include <juce_audio_utils/juce_audio_utils.h>
 #include <juce_gui_extra/juce_gui_extra.h>
+#include <atomic>
 #include <memory>
 
 #include "PedalListComponent.h"
@@ -30,6 +31,10 @@ private:
     juce::TextButton settingsButton{"Settings"};
     juce::Label statusLabel;
     std::unique_ptr<SettingsWindow> settingsWindow;
+
+    juce::Label masterVolumeLabel;
+    juce::Slider masterVolumeSlider;
+    std::atomic<float> masterVolumeGain { 1.0f };
 
     SignalChainComponent signalChain;
     PedalListComponent pedalList{signalChain};

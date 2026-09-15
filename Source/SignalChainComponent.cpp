@@ -1,4 +1,5 @@
 #include "SignalChainComponent.h"
+#include "KnobComponent.h"
 
 class SignalChainComponent::SlotComponent : public juce::Component
 {
@@ -8,11 +9,32 @@ public:
     {
         nameLabel.setText(pedal.getName(), juce::dontSendNotification);
         nameLabel.setJustificationType(juce::Justification::centred);
+        nameLabel.setFont(juce::Font(15.0f, juce::Font::bold));
         addAndMakeVisible(nameLabel);
 
         removeButton.setButtonText("x");
         removeButton.onClick = std::move(onRemove);
         addAndMakeVisible(removeButton);
+
+        for (auto* param : pedal.getParameters())
+        {
+            auto* knob = knobs.add(new KnobComponent(*param));
+            addAndMakeVisible(knob);
+        }
+
+        bool engaged = ! pedal.bypassed.load();
+        footswitch.setClickingTogglesState(true);
+        footswitch.setToggleState(engaged, juce::dontSendNotification);
+        footswitch.setButtonText(engaged ? "ON" : "OFF");
+        footswitch.setColour(juce::TextButton::buttonOnColourId, juce::Colours::limegreen);
+        footswitch.setColour(juce::TextButton::buttonColourId, juce::Colours::darkred);
+        footswitch.onClick = [this]
+        {
+            bool nowEngaged = footswitch.getToggleState();
+            pedal.bypassed.store(! nowEngaged);
+            footswitch.setButtonText(nowEngaged ? "ON" : "OFF");
+        };
+        addAndMakeVisible(footswitch);
     }
 
     void paint(juce::Graphics& g) override
@@ -27,8 +49,27 @@ public:
     void resized() override
     {
         auto area = getLocalBounds().reduced(6);
-        removeButton.setBounds(area.removeFromTop(18).removeFromRight(18));
-        nameLabel.setBounds(area);
+
+        auto header = area.removeFromTop(20);
+        removeButton.setBounds(header.removeFromRight(18));
+        nameLabel.setBounds(header);
+
+        area.removeFromTop(4);
+
+        auto footswitchArea = area.removeFromBottom(30);
+        footswitch.setBounds(footswitchArea.reduced(20, 0));
+
+        area.removeFromBottom(6);
+
+        juce::FlexBox fb;
+        fb.flexWrap = juce::FlexBox::Wrap::wrap;
+        fb.justifyContent = juce::FlexBox::JustifyContent::center;
+        fb.alignContent = juce::FlexBox::AlignContent::flexStart;
+
+        for (auto* knob : knobs)
+            fb.items.add(juce::FlexItem(*knob).withWidth(52).withHeight(72).withMargin(2));
+
+        fb.performLayout(area);
     }
 
     Pedal& pedal;
@@ -36,6 +77,8 @@ public:
 private:
     juce::Label nameLabel;
     juce::TextButton removeButton;
+    juce::TextButton footswitch;
+    juce::OwnedArray<KnobComponent> knobs;
 };
 
 SignalChainComponent::SignalChainComponent() = default;
@@ -95,7 +138,7 @@ void SignalChainComponent::processBlock(float* const* channelData, int numChanne
         return;
 
     for (auto& pedal : chain)
-        if (!pedal->bypassed)
+        if (!pedal->bypassed.load(std::memory_order_relaxed))
             pedal->process(channelData, numChannels, numSamples);
 }
 
@@ -115,7 +158,7 @@ void SignalChainComponent::paint(juce::Graphics& g)
 void SignalChainComponent::resized()
 {
     auto area = getLocalBounds().reduced(10);
-    constexpr int slotWidth = 110;
+    constexpr int slotWidth = 240;
     constexpr int gap = 10;
 
     for (auto* slot : slots)

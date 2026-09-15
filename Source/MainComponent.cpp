@@ -8,6 +8,21 @@ MainComponent::MainComponent()
     addAndMakeVisible(statusLabel);
     statusLabel.setJustificationType(juce::Justification::topLeft);
 
+    masterVolumeLabel.setText("Master Volume", juce::dontSendNotification);
+    masterVolumeLabel.setJustificationType(juce::Justification::centred);
+    addAndMakeVisible(masterVolumeLabel);
+
+    masterVolumeSlider.setSliderStyle(juce::Slider::LinearHorizontal);
+    masterVolumeSlider.setTextBoxStyle(juce::Slider::TextBoxRight, false, 50, 20);
+    masterVolumeSlider.setTextValueSuffix("%");
+    masterVolumeSlider.setRange(0.0, 150.0, 1.0);
+    masterVolumeSlider.setValue(100.0, juce::dontSendNotification);
+    masterVolumeSlider.onValueChange = [this]
+    {
+        masterVolumeGain.store((float) masterVolumeSlider.getValue() / 100.0f, std::memory_order_relaxed);
+    };
+    addAndMakeVisible(masterVolumeSlider);
+
     addAndMakeVisible(signalChain);
 
     tabs.addTab("Pedals", juce::Colours::darkgrey, &pedalList, false);
@@ -87,6 +102,10 @@ void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& buffer
             channelPtrs[channel] = buffer->getWritePointer(channel, bufferToFill.startSample);
 
         signalChain.processBlock(channelPtrs, numChannelsForFx, bufferToFill.numSamples);
+
+        auto gain = masterVolumeGain.load(std::memory_order_relaxed);
+        for (int channel = 0; channel < numChannelsForFx; ++channel)
+            juce::FloatVectorOperations::multiply(channelPtrs[channel], gain, bufferToFill.numSamples);
     }
 }
 
@@ -105,6 +124,12 @@ void MainComponent::resized()
 
     auto topBar = area.removeFromTop(45);
     settingsButton.setBounds(topBar.removeFromRight(120).removeFromTop(28));
+    topBar.removeFromRight(10);
+
+    auto volumeArea = topBar.removeFromRight(220);
+    masterVolumeLabel.setBounds(volumeArea.removeFromTop(16));
+    masterVolumeSlider.setBounds(volumeArea.removeFromTop(24));
+
     statusLabel.setBounds(topBar);
 
     area.removeFromTop(10);

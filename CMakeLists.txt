@@ -20,6 +20,7 @@ target_sources(CSim
         Source/SignalChainComponent.cpp
         Source/PedalListComponent.cpp
         Source/ReverbPedal.cpp
+        Source/KnobComponent.cpp
 )
 
 target_compile_definitions(CSim
