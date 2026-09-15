@@ -5,8 +5,9 @@
 #include "Pedal.h"
 
 // A clean amp voiced for dropped tunings: a rumble filter tuned below a
-// dropped low string, a Mid band centred on the ~200Hz zone that gets
-// boxy/muddy when tuning down, and a simple filter-based cabinet roll-off.
+// dropped low string, and a Mid band centred on the ~200Hz zone that gets
+// boxy/muddy when tuning down. No cabinet sim here - add a Cab from the
+// Cabs tab after this in the Signal Chain.
 class CleanAmpPedal : public Pedal
 {
 public:
@@ -30,7 +31,6 @@ private:
     juce::IIRFilter midFilter[maxChannels];
     juce::IIRFilter trebleFilter[maxChannels];
     juce::IIRFilter presenceFilter[maxChannels];
-    juce::IIRFilter cabFilter[maxChannels];
 
     PedalParameter bass     { "Bass",     0.0f, 100.0f, 50.0f };
     PedalParameter mid      { "Mid",      0.0f, 100.0f, 50.0f };

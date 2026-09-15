@@ -46,6 +46,7 @@ private:
     SignalChainComponent signalChain;
     PedalListComponent pedalList;
     PedalListComponent ampList;
+    PedalListComponent cabList;
     juce::TabbedComponent tabs{juce::TabbedButtonBar::TabsAtTop};
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainComponent)

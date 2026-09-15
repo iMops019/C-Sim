@@ -27,7 +27,6 @@ void CleanAmpPedal::prepare(double sampleRate, int /*maximumBlockSize*/, int /*n
         midFilter[ch].reset();
         trebleFilter[ch].reset();
         presenceFilter[ch].reset();
-        cabFilter[ch].reset();
     }
 }
 
@@ -46,9 +45,6 @@ void CleanAmpPedal::updateFilters()
     auto trebleCoeffs = juce::IIRCoefficients::makeHighShelf(currentSampleRate, 3000.0, 0.707f, knobToGainFactor(treble.get()));
     auto presenceCoeffs = juce::IIRCoefficients::makeHighShelf(currentSampleRate, 5000.0, 0.707f, knobToGainFactor(presence.get()));
 
-    // Simple filter-based cabinet roll-off, standing in for a real IR cab.
-    auto cabCoeffs = juce::IIRCoefficients::makeLowPass(currentSampleRate, 5000.0, 0.707f);
-
     for (int ch = 0; ch < maxChannels; ++ch)
     {
         rumbleFilter[ch].setCoefficients(rumbleCoeffs);
@@ -56,7 +52,6 @@ void CleanAmpPedal::updateFilters()
         midFilter[ch].setCoefficients(midCoeffs);
         trebleFilter[ch].setCoefficients(trebleCoeffs);
         presenceFilter[ch].setCoefficients(presenceCoeffs);
-        cabFilter[ch].setCoefficients(cabCoeffs);
     }
 }
 
@@ -75,7 +70,6 @@ void CleanAmpPedal::process(float* const* channelData, int numChannels, int numS
         midFilter[ch].processSamples(data, numSamples);
         trebleFilter[ch].processSamples(data, numSamples);
         presenceFilter[ch].processSamples(data, numSamples);
-        cabFilter[ch].processSamples(data, numSamples);
     }
 
     auto gain = level.get() / 100.0f;

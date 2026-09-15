@@ -2,6 +2,7 @@
 #include "ReverbPedal.h"
 #include "CleanAmpPedal.h"
 #include "Peavey5150Pedal.h"
+#include "FourByTwelveCabPedal.h"
 
 namespace
 {
@@ -15,11 +16,17 @@ namespace
         return { { "Drop Tuned Clean 1", [] { return std::make_unique<CleanAmpPedal>(); } },
                  { "5150 Lead", [] { return std::make_unique<Peavey5150Pedal>(); } } };
     }
+
+    std::vector<PedalListComponent::CatalogItem> makeCabCatalog()
+    {
+        return { { "4x12 V30", [] { return std::make_unique<FourByTwelveCabPedal>(); } } };
+    }
 }
 
 MainComponent::MainComponent()
     : pedalList(signalChain, makePedalCatalog()),
-      ampList(signalChain, makeAmpCatalog())
+      ampList(signalChain, makeAmpCatalog()),
+      cabList(signalChain, makeCabCatalog())
 {
     addAndMakeVisible(settingsButton);
     settingsButton.onClick = [this] { openSettings(); };
@@ -47,8 +54,9 @@ MainComponent::MainComponent()
 
     addAndMakeVisible(signalChain);
 
-    tabs.addTab("Amps", juce::Colours::darkgrey, &ampList, false);
     tabs.addTab("Pedals", juce::Colours::darkgrey, &pedalList, false);
+    tabs.addTab("Amps", juce::Colours::darkgrey, &ampList, false);
+    tabs.addTab("Cabs", juce::Colours::darkgrey, &cabList, false);
     addAndMakeVisible(tabs);
 
     setSize(800, 600);

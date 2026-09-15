@@ -8,7 +8,8 @@
 // cascaded saturation stages (like cascading preamp tubes), an inter-stage
 // high-pass to keep dropped-tuning low end tight rather than flubby, and
 // the 5150's signature control set - Gain, Bass, Mid, Treble, Presence,
-// Resonance, Level.
+// Resonance, Level. No cabinet sim here - add a Cab from the Cabs tab
+// after this in the Signal Chain (try the 4x12 V30 for a 5150 pairing).
 class Peavey5150Pedal : public Pedal
 {
 public:
@@ -35,7 +36,6 @@ private:
     juce::IIRFilter trebleFilter[maxChannels];
     juce::IIRFilter resonanceFilter[maxChannels];
     juce::IIRFilter presenceFilter[maxChannels];
-    juce::IIRFilter cabFilter[maxChannels];
 
     PedalParameter gain      { "Gain",      0.0f, 100.0f, 70.0f };
     PedalParameter bass      { "Bass",      0.0f, 100.0f, 50.0f };

@@ -39,7 +39,6 @@ void Peavey5150Pedal::prepare(double sampleRate, int /*maximumBlockSize*/, int /
         trebleFilter[ch].reset();
         resonanceFilter[ch].reset();
         presenceFilter[ch].reset();
-        cabFilter[ch].reset();
     }
 }
 
@@ -63,9 +62,6 @@ void Peavey5150Pedal::updateFilters()
     // dropped tunings, up for a looser, boomier low end.
     auto resonanceCoeffs = juce::IIRCoefficients::makeLowShelf(currentSampleRate, 70.0, 0.707f, knobToGainFactor(resonance.get()));
 
-    // Slightly darker than the clean amp's cab - closed-back 4x12 character.
-    auto cabCoeffs = juce::IIRCoefficients::makeLowPass(currentSampleRate, 4500.0, 0.707f);
-
     for (int ch = 0; ch < maxChannels; ++ch)
     {
         preGainHighPass[ch].setCoefficients(preGainCoeffs);
@@ -75,7 +71,6 @@ void Peavey5150Pedal::updateFilters()
         trebleFilter[ch].setCoefficients(trebleCoeffs);
         presenceFilter[ch].setCoefficients(presenceCoeffs);
         resonanceFilter[ch].setCoefficients(resonanceCoeffs);
-        cabFilter[ch].setCoefficients(cabCoeffs);
     }
 }
 
@@ -115,7 +110,6 @@ void Peavey5150Pedal::process(float* const* channelData, int numChannels, int nu
         trebleFilter[ch].processSamples(data, numSamples);
         resonanceFilter[ch].processSamples(data, numSamples);
         presenceFilter[ch].processSamples(data, numSamples);
-        cabFilter[ch].processSamples(data, numSamples);
     }
 
     auto outputGain = level.get() / 100.0f;
