@@ -21,12 +21,17 @@ target_sources(CSim
         Source/PedalListComponent.cpp
         Source/ReverbPedal.cpp
         Source/KnobComponent.cpp
+        Source/PitchDetector.cpp
+        Source/TunerEngine.cpp
+        Source/TunerComponent.cpp
+        Source/TunerWindow.cpp
 )
 
 target_compile_definitions(CSim
     PRIVATE
         JUCE_WEB_BROWSER=0
         JUCE_USE_CURL=0
+        JUCE_ASIO=1
         JUCE_APPLICATION_NAME_STRING="$<TARGET_PROPERTY:CSim,JUCE_PRODUCT_NAME>"
         JUCE_APPLICATION_VERSION_STRING="$<TARGET_PROPERTY:CSim,JUCE_VERSION>"
 )

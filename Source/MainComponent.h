@@ -8,6 +8,8 @@
 #include "PedalListComponent.h"
 #include "SettingsWindow.h"
 #include "SignalChainComponent.h"
+#include "TunerEngine.h"
+#include "TunerWindow.h"
 
 class MainComponent : public juce::AudioAppComponent,
                        private juce::ChangeListener
@@ -25,12 +27,17 @@ public:
 
 private:
     void openSettings();
+    void openTuner();
     void updateStatusLabel();
     void changeListenerCallback(juce::ChangeBroadcaster* source) override;
 
     juce::TextButton settingsButton{"Settings"};
+    juce::TextButton tunerButton{"Tuner"};
     juce::Label statusLabel;
     std::unique_ptr<SettingsWindow> settingsWindow;
+
+    TunerEngine tunerEngine;
+    std::unique_ptr<TunerWindow> tunerWindow;
 
     juce::Label masterVolumeLabel;
     juce::Slider masterVolumeSlider;

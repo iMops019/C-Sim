@@ -5,6 +5,9 @@ MainComponent::MainComponent()
     addAndMakeVisible(settingsButton);
     settingsButton.onClick = [this] { openSettings(); };
 
+    addAndMakeVisible(tunerButton);
+    tunerButton.onClick = [this] { openTuner(); };
+
     addAndMakeVisible(statusLabel);
     statusLabel.setJustificationType(juce::Justification::topLeft);
 
@@ -43,12 +46,14 @@ MainComponent::~MainComponent()
 {
     deviceManager.removeChangeListener(this);
     settingsWindow = nullptr;
+    tunerWindow = nullptr;
     shutdownAudio();
 }
 
 void MainComponent::prepareToPlay(int samplesPerBlockExpected, double sampleRate)
 {
     signalChain.setAudioConfig(sampleRate, samplesPerBlockExpected, 2);
+    tunerEngine.setSampleRate(sampleRate);
 }
 
 void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& bufferToFill)
@@ -94,6 +99,10 @@ void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& buffer
             buffer->clear(channel, bufferToFill.startSample, bufferToFill.numSamples);
     }
 
+    // Feed the tuner from the dry, pre-effects signal so pedals don't throw
+    // off pitch detection.
+    tunerEngine.pushSamples(buffer->getReadPointer(0, bufferToFill.startSample), bufferToFill.numSamples);
+
     auto numChannelsForFx = juce::jmin(numOutBuses, 2);
     if (numChannelsForFx > 0)
     {
@@ -123,7 +132,9 @@ void MainComponent::resized()
     auto area = getLocalBounds().reduced(10);
 
     auto topBar = area.removeFromTop(45);
-    settingsButton.setBounds(topBar.removeFromRight(120).removeFromTop(28));
+    settingsButton.setBounds(topBar.removeFromRight(100).removeFromTop(28));
+    topBar.removeFromRight(8);
+    tunerButton.setBounds(topBar.removeFromRight(80).removeFromTop(28));
     topBar.removeFromRight(10);
 
     auto volumeArea = topBar.removeFromRight(220);
@@ -150,6 +161,17 @@ void MainComponent::openSettings()
     }
 
     settingsWindow = std::make_unique<SettingsWindow>(deviceManager, [this] { settingsWindow = nullptr; });
+}
+
+void MainComponent::openTuner()
+{
+    if (tunerWindow != nullptr)
+    {
+        tunerWindow->toFront(true);
+        return;
+    }
+
+    tunerWindow = std::make_unique<TunerWindow>(tunerEngine, [this] { tunerWindow = nullptr; });
 }
 
 void MainComponent::updateStatusLabel()
