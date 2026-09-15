@@ -4,7 +4,9 @@
 #include <juce_gui_extra/juce_gui_extra.h>
 #include <memory>
 
+#include "PedalListComponent.h"
 #include "SettingsWindow.h"
+#include "SignalChainComponent.h"
 
 class MainComponent : public juce::AudioAppComponent,
                        private juce::ChangeListener
@@ -28,6 +30,10 @@ private:
     juce::TextButton settingsButton{"Settings"};
     juce::Label statusLabel;
     std::unique_ptr<SettingsWindow> settingsWindow;
+
+    SignalChainComponent signalChain;
+    PedalListComponent pedalList{signalChain};
+    juce::TabbedComponent tabs{juce::TabbedButtonBar::TabsAtTop};
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainComponent)
 };

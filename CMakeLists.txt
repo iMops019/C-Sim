@@ -17,6 +17,9 @@ target_sources(CSim
         Source/Main.cpp
         Source/MainComponent.cpp
         Source/SettingsWindow.cpp
+        Source/SignalChainComponent.cpp
+        Source/PedalListComponent.cpp
+        Source/ReverbPedal.cpp
 )
 
 target_compile_definitions(CSim
