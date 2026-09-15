@@ -1,5 +1,4 @@
 #include "PedalListComponent.h"
-#include "ReverbPedal.h"
 
 class PedalListComponent::CatalogEntry : public juce::Component
 {
@@ -32,14 +31,18 @@ private:
     juce::TextButton addButton;
 };
 
-PedalListComponent::PedalListComponent(SignalChainComponent& signalChainToUse)
+PedalListComponent::PedalListComponent(SignalChainComponent& signalChainToUse, std::vector<CatalogItem> catalogToShow)
     : signalChain(signalChainToUse)
 {
-    auto* reverbEntry = entries.add(new CatalogEntry("Reverb", [this]
+    for (auto& item : catalogToShow)
     {
-        signalChain.addPedal(std::make_unique<ReverbPedal>());
-    }));
-    addAndMakeVisible(reverbEntry);
+        auto create = item.create;
+        auto* entry = entries.add(new CatalogEntry(item.name, [this, create]
+        {
+            signalChain.addPedal(create());
+        }));
+        addAndMakeVisible(entry);
+    }
 }
 
 PedalListComponent::~PedalListComponent() = default;

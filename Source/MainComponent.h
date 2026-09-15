@@ -44,7 +44,8 @@ private:
     std::atomic<float> masterVolumeGain { 1.0f };
 
     SignalChainComponent signalChain;
-    PedalListComponent pedalList{signalChain};
+    PedalListComponent pedalList;
+    PedalListComponent ampList;
     juce::TabbedComponent tabs{juce::TabbedButtonBar::TabsAtTop};
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MainComponent)

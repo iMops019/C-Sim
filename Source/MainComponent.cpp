@@ -1,6 +1,23 @@
 #include "MainComponent.h"
+#include "ReverbPedal.h"
+#include "CleanAmpPedal.h"
+
+namespace
+{
+    std::vector<PedalListComponent::CatalogItem> makePedalCatalog()
+    {
+        return { { "Reverb", [] { return std::make_unique<ReverbPedal>(); } } };
+    }
+
+    std::vector<PedalListComponent::CatalogItem> makeAmpCatalog()
+    {
+        return { { "Clean Amp", [] { return std::make_unique<CleanAmpPedal>(); } } };
+    }
+}
 
 MainComponent::MainComponent()
+    : pedalList(signalChain, makePedalCatalog()),
+      ampList(signalChain, makeAmpCatalog())
 {
     addAndMakeVisible(settingsButton);
     settingsButton.onClick = [this] { openSettings(); };
@@ -28,6 +45,7 @@ MainComponent::MainComponent()
 
     addAndMakeVisible(signalChain);
 
+    tabs.addTab("Amps", juce::Colours::darkgrey, &ampList, false);
     tabs.addTab("Pedals", juce::Colours::darkgrey, &pedalList, false);
     addAndMakeVisible(tabs);
 

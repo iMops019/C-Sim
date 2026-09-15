@@ -2,17 +2,25 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <functional>
+#include <memory>
+#include <vector>
 
 #include "Pedal.h"
 #include "SignalChainComponent.h"
 
-// Content of the "Pedals" tab: a catalog of available pedal types the user
-// can add to the Signal Chain themselves. Nothing here is added
-// automatically - each entry only acts when its Add button is clicked.
+// Content of a catalog tab (e.g. "Pedals" or "Amps"): lists available
+// types the user can add to the Signal Chain themselves. Nothing here is
+// added automatically - each entry only acts when its Add button is clicked.
 class PedalListComponent : public juce::Component
 {
 public:
-    explicit PedalListComponent(SignalChainComponent& signalChainToUse);
+    struct CatalogItem
+    {
+        juce::String name;
+        std::function<std::unique_ptr<Pedal>()> create;
+    };
+
+    PedalListComponent(SignalChainComponent& signalChainToUse, std::vector<CatalogItem> catalogToShow);
     ~PedalListComponent() override;
 
     void paint(juce::Graphics& g) override;

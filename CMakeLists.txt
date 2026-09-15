@@ -20,6 +20,7 @@ target_sources(CSim
         Source/SignalChainComponent.cpp
         Source/PedalListComponent.cpp
         Source/ReverbPedal.cpp
+        Source/CleanAmpPedal.cpp
         Source/KnobComponent.cpp
         Source/PitchDetector.cpp
         Source/TunerEngine.cpp
