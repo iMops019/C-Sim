@@ -20,6 +20,7 @@ target_sources(CSim
         Source/SignalChainComponent.cpp
         Source/PedalListComponent.cpp
         Source/ReverbPedal.cpp
+        Source/NoiseGatePedal.cpp
         Source/CleanAmpPedal.cpp
         Source/Peavey5150Pedal.cpp
         Source/FourByTwelveCabPedal.cpp
