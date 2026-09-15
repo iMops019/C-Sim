@@ -35,6 +35,13 @@ public:
             footswitch.setButtonText(nowEngaged ? "ON" : "OFF");
         };
         addAndMakeVisible(footswitch);
+
+        if (pedal.supportsImpulseResponseFile())
+        {
+            loadIRButton.setButtonText("Load IR...");
+            loadIRButton.onClick = [this] { openIRChooser(); };
+            addAndMakeVisible(loadIRButton);
+        }
     }
 
     void paint(juce::Graphics& g) override
@@ -58,8 +65,14 @@ public:
 
         auto footswitchArea = area.removeFromBottom(30);
         footswitch.setBounds(footswitchArea.reduced(20, 0));
-
         area.removeFromBottom(6);
+
+        if (pedal.supportsImpulseResponseFile())
+        {
+            auto irArea = area.removeFromBottom(24);
+            loadIRButton.setBounds(irArea.reduced(10, 0));
+            area.removeFromBottom(6);
+        }
 
         juce::FlexBox fb;
         fb.flexWrap = juce::FlexBox::Wrap::wrap;
@@ -75,9 +88,26 @@ public:
     Pedal& pedal;
 
 private:
+    void openIRChooser()
+    {
+        fileChooser = std::make_unique<juce::FileChooser>(
+            "Select a cabinet impulse response (.wav)", juce::File(), "*.wav;*.aif;*.aiff");
+
+        auto chooserFlags = juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles;
+
+        fileChooser->launchAsync(chooserFlags, [this](const juce::FileChooser& chooser)
+        {
+            auto file = chooser.getResult();
+            if (file.existsAsFile())
+                pedal.loadImpulseResponseFile(file);
+        });
+    }
+
     juce::Label nameLabel;
     juce::TextButton removeButton;
     juce::TextButton footswitch;
+    juce::TextButton loadIRButton;
+    std::unique_ptr<juce::FileChooser> fileChooser;
     juce::OwnedArray<KnobComponent> knobs;
 };
 

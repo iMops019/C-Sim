@@ -5,6 +5,8 @@ FourByTwelveCabPedal::FourByTwelveCabPedal() = default;
 
 void FourByTwelveCabPedal::prepare(double sampleRate, int maximumBlockSize, int numChannels)
 {
+    currentSampleRate = sampleRate;
+
     // Load before prepare(), as juce::dsp::Convolution recommends, so the
     // IR is guaranteed active for the very first process() call.
     convolution.loadImpulseResponse(CabImpulseResponse::generateFourByTwelveV30(sampleRate),
@@ -19,6 +21,26 @@ void FourByTwelveCabPedal::prepare(double sampleRate, int maximumBlockSize, int 
         static_cast<juce::uint32>(juce::jmax(1, numChannels))
     };
     convolution.prepare(spec);
+}
+
+bool FourByTwelveCabPedal::loadImpulseResponseFile(const juce::File& file)
+{
+    if (! file.existsAsFile())
+        return false;
+
+    // loadImpulseResponse() is wait-free and safe to call while process()
+    // is running on the audio thread elsewhere (per its own docs), so this
+    // can hot-swap the IR live from a UI button click with no audio glitch.
+    // Cap at 2 seconds - real cab IRs are short; this just guards against
+    // an accidentally huge file (e.g. a full reverb IR) tanking CPU/latency.
+    auto maxSamples = static_cast<size_t>(currentSampleRate * 2.0);
+
+    convolution.loadImpulseResponse(file,
+                                     juce::dsp::Convolution::Stereo::yes,
+                                     juce::dsp::Convolution::Trim::yes,
+                                     maxSamples,
+                                     juce::dsp::Convolution::Normalise::yes);
+    return true;
 }
 
 void FourByTwelveCabPedal::process(float* const* channelData, int numChannels, int numSamples)

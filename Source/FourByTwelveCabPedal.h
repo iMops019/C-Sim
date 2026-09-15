@@ -23,8 +23,12 @@ public:
 
     std::vector<PedalParameter*> getParameters() override;
 
+    bool supportsImpulseResponseFile() const override { return true; }
+    bool loadImpulseResponseFile(const juce::File& file) override;
+
 private:
     juce::dsp::Convolution convolution;
+    double currentSampleRate = 44100.0;
 
     PedalParameter level { "Level", 0.0f, 150.0f, 100.0f };
 };

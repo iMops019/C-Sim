@@ -24,5 +24,10 @@ public:
     // Empty by default - override if the pedal has any.
     virtual std::vector<PedalParameter*> getParameters() { return {}; }
 
+    // Override for pedals that can load a user-supplied file (e.g. a cab
+    // that can load a real impulse response in place of its built-in one).
+    virtual bool supportsImpulseResponseFile() const { return false; }
+    virtual bool loadImpulseResponseFile(const juce::File&) { return false; }
+
     std::atomic<bool> bypassed { false };
 };
