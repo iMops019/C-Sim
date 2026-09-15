@@ -18,6 +18,11 @@
 // back down as audible aliasing if left at the original sample rate.
 // Running the clipping at a higher rate and filtering back down removes
 // that harshness.
+//
+// A Sag control also follows the saturation stages, modeling the way a
+// real tube power supply momentarily droops under heavy drive: gain is
+// reduced following a slow envelope of the post-distortion signal, giving
+// a springy "give" under pick attack instead of static, unyielding gain.
 class Peavey5150Pedal : public Pedal
 {
 public:
@@ -48,11 +53,16 @@ private:
     juce::IIRFilter resonanceFilter[maxChannels];
     juce::IIRFilter presenceFilter[maxChannels];
 
+    float sagEnvelope[maxChannels] = { 0.0f, 0.0f };
+    float sagAttackCoeff = 0.0f;
+    float sagReleaseCoeff = 0.0f;
+
     PedalParameter gain      { "Gain",      0.0f, 100.0f, 70.0f };
     PedalParameter bass      { "Bass",      0.0f, 100.0f, 50.0f };
     PedalParameter mid       { "Mid",       0.0f, 100.0f, 55.0f };
     PedalParameter treble    { "Treble",    0.0f, 100.0f, 55.0f };
     PedalParameter presence  { "Presence",  0.0f, 100.0f, 55.0f };
     PedalParameter resonance { "Resonance", 0.0f, 100.0f, 50.0f };
+    PedalParameter sag       { "Sag",       0.0f, 100.0f, 40.0f };
     PedalParameter level     { "Level",     0.0f, 150.0f, 90.0f };
 };

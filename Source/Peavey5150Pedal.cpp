@@ -18,6 +18,11 @@ namespace
         auto biased = x * drive + bias;
         return std::tanh(biased) - std::tanh(bias);
     }
+
+    float timeToCoeff(float timeSeconds, float sampleRate)
+    {
+        return 1.0f - std::exp(-1.0f / (timeSeconds * sampleRate));
+    }
 }
 
 Peavey5150Pedal::Peavey5150Pedal()
@@ -46,6 +51,7 @@ void Peavey5150Pedal::prepare(double sampleRate, int maximumBlockSize, int /*num
         trebleFilter[ch].reset();
         resonanceFilter[ch].reset();
         presenceFilter[ch].reset();
+        sagEnvelope[ch] = 0.0f;
     }
 }
 
@@ -71,6 +77,14 @@ void Peavey5150Pedal::updateFilters()
     // dropped tunings, up for a looser, boomier low end.
     auto resonanceCoeffs = juce::IIRCoefficients::makeLowShelf(currentSampleRate, 70.0, 0.707f, knobToGainFactor(resonance.get()));
 
+    // Sag envelope runs inside the oversampled loop, so its time constants
+    // need to be in oversampled samples too. Fast-ish attack (the supply
+    // droops quickly under a transient), release scaled by the Sag knob -
+    // more Sag means a slower recovery, i.e. a more pronounced "breathing".
+    sagAttackCoeff = timeToCoeff(0.015f, static_cast<float>(oversampledRate));
+    auto sagReleaseSeconds = 0.05f + (sag.get() / 100.0f) * 0.45f;
+    sagReleaseCoeff = timeToCoeff(sagReleaseSeconds, static_cast<float>(oversampledRate));
+
     for (int ch = 0; ch < maxChannels; ++ch)
     {
         preGainHighPass[ch].setCoefficients(preGainCoeffs);
@@ -93,6 +107,17 @@ float Peavey5150Pedal::processSample(float x, int channel)
 
     // Stage 2: fixed moderate drive, adds compression/sustain on top.
     auto stage2 = asymmetricSaturate(stage1, 3.0f, 0.1f);
+
+    // Power-amp sag: gain droops as the post-distortion envelope rises,
+    // recovering over the Sag-controlled release time - the "give" a real
+    // tube power supply has under heavy drive, rather than static gain.
+    auto rectified = std::abs(stage2);
+    auto sagCoeff = rectified > sagEnvelope[channel] ? sagAttackCoeff : sagReleaseCoeff;
+    sagEnvelope[channel] += sagCoeff * (rectified - sagEnvelope[channel]);
+
+    auto sagAmount = sag.get() / 100.0f;
+    auto sagGainReduction = 1.0f / (1.0f + sagAmount * sagEnvelope[channel] * 1.5f);
+    stage2 *= sagGainReduction;
 
     // Cascaded tanh stages get loud fast - bring it back down before the
     // tone stack, roughly compensating for the gain knob's own boost.
@@ -148,5 +173,5 @@ void Peavey5150Pedal::process(float* const* channelData, int numChannels, int nu
 
 std::vector<PedalParameter*> Peavey5150Pedal::getParameters()
 {
-    return { &gain, &bass, &mid, &treble, &presence, &resonance, &level };
+    return { &gain, &bass, &mid, &treble, &presence, &resonance, &sag, &level };
 }
