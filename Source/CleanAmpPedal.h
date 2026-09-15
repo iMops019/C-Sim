@@ -12,7 +12,7 @@ class CleanAmpPedal : public Pedal
 public:
     CleanAmpPedal();
 
-    juce::String getName() const override { return "Clean Amp"; }
+    juce::String getName() const override { return "Drop Tuned Clean 1"; }
 
     void prepare(double sampleRate, int maximumBlockSize, int numChannels) override;
     void process(float* const* channelData, int numChannels, int numSamples) override;

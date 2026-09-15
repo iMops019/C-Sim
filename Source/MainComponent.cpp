@@ -1,6 +1,7 @@
 #include "MainComponent.h"
 #include "ReverbPedal.h"
 #include "CleanAmpPedal.h"
+#include "Peavey5150Pedal.h"
 
 namespace
 {
@@ -11,7 +12,8 @@ namespace
 
     std::vector<PedalListComponent::CatalogItem> makeAmpCatalog()
     {
-        return { { "Clean Amp", [] { return std::make_unique<CleanAmpPedal>(); } } };
+        return { { "Drop Tuned Clean 1", [] { return std::make_unique<CleanAmpPedal>(); } },
+                 { "5150 Lead", [] { return std::make_unique<Peavey5150Pedal>(); } } };
     }
 }
 

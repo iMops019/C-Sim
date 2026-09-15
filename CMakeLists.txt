@@ -21,6 +21,7 @@ target_sources(CSim
         Source/PedalListComponent.cpp
         Source/ReverbPedal.cpp
         Source/CleanAmpPedal.cpp
+        Source/Peavey5150Pedal.cpp
         Source/KnobComponent.cpp
         Source/PitchDetector.cpp
         Source/TunerEngine.cpp
