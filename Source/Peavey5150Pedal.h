@@ -1,6 +1,8 @@
 #pragma once
 
 #include <juce_audio_basics/juce_audio_basics.h>
+#include <juce_dsp/juce_dsp.h>
+#include <memory>
 
 #include "Pedal.h"
 
@@ -10,6 +12,12 @@
 // the 5150's signature control set - Gain, Bass, Mid, Treble, Presence,
 // Resonance, Level. No cabinet sim here - add a Cab from the Cabs tab
 // after this in the Signal Chain (try the 4x12 V30 for a 5150 pairing).
+//
+// The saturation stages run at 4x oversampling: a nonlinear waveshaper
+// generates harmonics above the input's Nyquist frequency, which fold
+// back down as audible aliasing if left at the original sample rate.
+// Running the clipping at a higher rate and filtering back down removes
+// that harshness.
 class Peavey5150Pedal : public Pedal
 {
 public:
@@ -27,6 +35,9 @@ private:
     float processSample(float x, int channel);
 
     double currentSampleRate = 44100.0;
+    static constexpr int oversamplingFactor = 2; // 2^2 = 4x
+
+    std::unique_ptr<juce::dsp::Oversampling<float>> oversampling;
 
     static constexpr int maxChannels = 2;
     juce::IIRFilter preGainHighPass[maxChannels];

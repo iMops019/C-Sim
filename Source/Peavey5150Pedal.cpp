@@ -25,9 +25,16 @@ Peavey5150Pedal::Peavey5150Pedal()
     updateFilters();
 }
 
-void Peavey5150Pedal::prepare(double sampleRate, int /*maximumBlockSize*/, int /*numChannels*/)
+void Peavey5150Pedal::prepare(double sampleRate, int maximumBlockSize, int /*numChannels*/)
 {
     currentSampleRate = sampleRate;
+
+    oversampling = std::make_unique<juce::dsp::Oversampling<float>>(
+        static_cast<size_t>(maxChannels), static_cast<size_t>(oversamplingFactor),
+        juce::dsp::Oversampling<float>::filterHalfBandFIREquiripple, true, false);
+    oversampling->initProcessing(static_cast<size_t>(juce::jmax(1, maximumBlockSize)));
+    oversampling->reset();
+
     updateFilters();
 
     for (int ch = 0; ch < maxChannels; ++ch)
@@ -49,8 +56,10 @@ void Peavey5150Pedal::updateFilters()
     auto preGainCoeffs = juce::IIRCoefficients::makeHighPass(currentSampleRate, 55.0);
 
     // Between the two clipping stages - this is where most of the "tight
-    // vs. flubby" character of a high-gain amp actually comes from.
-    auto interStageCoeffs = juce::IIRCoefficients::makeHighPass(currentSampleRate, 90.0);
+    // vs. flubby" character of a high-gain amp actually comes from. Runs at
+    // the oversampled rate since it operates inside the up-sampled block.
+    auto oversampledRate = currentSampleRate * static_cast<double>(1 << oversamplingFactor);
+    auto interStageCoeffs = juce::IIRCoefficients::makeHighPass(oversampledRate, 90.0);
 
     auto bassCoeffs = juce::IIRCoefficients::makeLowShelf(currentSampleRate, 150.0, 0.707f, knobToGainFactor(bass.get()));
     auto midCoeffs = juce::IIRCoefficients::makePeakFilter(currentSampleRate, 700.0, 1.0f, knobToGainFactor(mid.get()));
@@ -97,13 +106,33 @@ void Peavey5150Pedal::process(float* const* channelData, int numChannels, int nu
     auto numChannelsToProcess = juce::jmin(numChannels, maxChannels);
 
     for (int ch = 0; ch < numChannelsToProcess; ++ch)
+        preGainHighPass[ch].processSamples(channelData[ch], numSamples);
+
+    if (oversampling != nullptr)
+    {
+        juce::dsp::AudioBlock<float> block(channelData, static_cast<size_t>(numChannelsToProcess),
+                                            static_cast<size_t>(numSamples));
+
+        // Saturation runs at 4x sample rate so the harmonics it generates
+        // above the original Nyquist get filtered out on the way back down
+        // instead of aliasing.
+        auto oversampledBlock = oversampling->processSamplesUp(block);
+        auto osNumSamples = static_cast<int>(oversampledBlock.getNumSamples());
+
+        for (int ch = 0; ch < numChannelsToProcess; ++ch)
+        {
+            auto* data = oversampledBlock.getChannelPointer(static_cast<size_t>(ch));
+
+            for (int i = 0; i < osNumSamples; ++i)
+                data[i] = processSample(data[i], ch);
+        }
+
+        oversampling->processSamplesDown(block);
+    }
+
+    for (int ch = 0; ch < numChannelsToProcess; ++ch)
     {
         auto* data = channelData[ch];
-
-        preGainHighPass[ch].processSamples(data, numSamples);
-
-        for (int i = 0; i < numSamples; ++i)
-            data[i] = processSample(data[i], ch);
 
         bassFilter[ch].processSamples(data, numSamples);
         midFilter[ch].processSamples(data, numSamples);
