@@ -70,3 +70,9 @@ add_executable(OversamplerAliasingTest
     Source/dsp/Oversampler4x.cpp
 )
 target_include_directories(OversamplerAliasingTest PRIVATE Source/dsp)
+
+add_executable(FenderToneStackTest
+    Tests/FenderToneStackTest.cpp
+    Source/dsp/FenderToneStack.cpp
+)
+target_include_directories(FenderToneStackTest PRIVATE Source/dsp)
