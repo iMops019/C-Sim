@@ -76,3 +76,11 @@ add_executable(FenderToneStackTest
     Source/dsp/FenderToneStack.cpp
 )
 target_include_directories(FenderToneStackTest PRIVATE Source/dsp)
+
+add_executable(MetalPreampChainTest
+    Tests/MetalPreampChainTest.cpp
+    Source/dsp/MetalPreampChain.cpp
+    Source/dsp/KorenTriodeStage.cpp
+    Source/dsp/Oversampler4x.cpp
+)
+target_include_directories(MetalPreampChainTest PRIVATE Source/dsp)
