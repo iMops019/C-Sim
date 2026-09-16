@@ -91,3 +91,9 @@ add_executable(PowerAmpStageTest
     Source/dsp/KorenTriodeStage.cpp
 )
 target_include_directories(PowerAmpStageTest PRIVATE Source/dsp)
+
+add_executable(DiodeClipperStageTest
+    Tests/DiodeClipperStageTest.cpp
+    Source/dsp/DiodeClipperStage.cpp
+)
+target_include_directories(DiodeClipperStageTest PRIVATE Source/dsp)
