@@ -35,6 +35,14 @@ public:
     // Processes one sample of a normalised (roughly -1..1) audio signal.
     float processSample(float input) const noexcept;
 
+    // As processSample(), but evaluated at a caller-supplied plate voltage
+    // instead of the fixed nominal one - for a power-amp stage whose rail
+    // voltage droops dynamically under sag. Recomputes the quiescent point
+    // at this voltage (the DC operating point does shift with Vp) but
+    // reuses the normalisation scale calibrated at the nominal Vp, which is
+    // fine: real sag doesn't perfectly renormalise either.
+    float processSampleWithPlateVoltage(float input, double dynamicPlateVoltage) const noexcept;
+
 private:
     static double plateCurrent(double vg, double vp, const Parameters& p) noexcept;
 

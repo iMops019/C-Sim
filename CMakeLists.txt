@@ -84,3 +84,10 @@ add_executable(MetalPreampChainTest
     Source/dsp/Oversampler4x.cpp
 )
 target_include_directories(MetalPreampChainTest PRIVATE Source/dsp)
+
+add_executable(PowerAmpStageTest
+    Tests/PowerAmpStageTest.cpp
+    Source/dsp/PowerAmpStage.cpp
+    Source/dsp/KorenTriodeStage.cpp
+)
+target_include_directories(PowerAmpStageTest PRIVATE Source/dsp)
