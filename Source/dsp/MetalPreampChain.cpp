@@ -45,11 +45,17 @@ void MetalPreampChain::setDrive(float newDrive)
     drive = std::clamp(newDrive, 0.0f, 1.0f);
 }
 
+void MetalPreampChain::setDiodeBlend(float newBlend)
+{
+    diodeBlend = std::clamp(newBlend, 0.0f, 1.0f);
+}
+
 void MetalPreampChain::reset()
 {
     preGainHighpass.reset();
     for (auto& hp : interStageHighpass)
         hp.reset();
+    diodeClipper.reset();
     oversampler.reset();
 }
 
@@ -72,6 +78,15 @@ float MetalPreampChain::processOversampledSample(float x) noexcept
     signal = interStageHighpass[1].processSample(signal) * interStageMakeupGain;
 
     signal = stages[2].processSample(signal);
+
+    // Diode clipper mixed in after the tube cascade - Mesa Rectifier-style
+    // extra edge from its hard, symmetric knee, distinct from the tubes'
+    // soft/asymmetric character.
+    if (diodeBlend > 0.0f)
+    {
+        auto diodeOut = diodeClipper.processSample(signal);
+        signal = signal * (1.0f - diodeBlend) + diodeOut * diodeBlend;
+    }
 
     // Three cascaded stages compound gain fast; bring the level back down
     // before this returns to whatever tone stack/cab follows.

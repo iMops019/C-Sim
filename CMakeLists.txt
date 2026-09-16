@@ -82,6 +82,7 @@ add_executable(MetalPreampChainTest
     Source/dsp/MetalPreampChain.cpp
     Source/dsp/KorenTriodeStage.cpp
     Source/dsp/Oversampler4x.cpp
+    Source/dsp/DiodeClipperStage.cpp
 )
 target_include_directories(MetalPreampChainTest PRIVATE Source/dsp)
 
@@ -97,3 +98,15 @@ add_executable(DiodeClipperStageTest
     Source/dsp/DiodeClipperStage.cpp
 )
 target_include_directories(DiodeClipperStageTest PRIVATE Source/dsp)
+
+add_executable(MetalAmpFullChainTest
+    Tests/MetalAmpFullChainTest.cpp
+    Source/dsp/MetalPreampChain.cpp
+    Source/dsp/KorenTriodeStage.cpp
+    Source/dsp/Oversampler4x.cpp
+    Source/dsp/DiodeClipperStage.cpp
+    Source/dsp/NoiseGate.cpp
+    Source/dsp/FenderToneStack.cpp
+    Source/dsp/PowerAmpStage.cpp
+)
+target_include_directories(MetalAmpFullChainTest PRIVATE Source/dsp)

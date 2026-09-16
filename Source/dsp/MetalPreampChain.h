@@ -3,6 +3,7 @@
 #include <array>
 
 #include "CouplingHighpass.h"
+#include "DiodeClipperStage.h"
 #include "KorenTriodeStage.h"
 #include "Oversampler4x.h"
 
@@ -20,6 +21,10 @@
 //    rather than being identical copies, closer to how real cascaded
 //    stages differ and avoiding the reinforced sameness three identical
 //    nonlinearities in a row would produce.
+//  - A diode clipper is blended in after the tube cascade (Mesa
+//    Rectifier-style "extra edge") - its hard, symmetric knee is a
+//    distinctly different character from the tubes' soft/asymmetric
+//    curve, and setDiodeBlend controls how much of it mixes in.
 class MetalPreampChain
 {
 public:
@@ -29,6 +34,10 @@ public:
 
     // 0..1: scales how hard the cascade is driven overall.
     void setDrive(float newDrive);
+
+    // 0..1: how much of the diode clipper's harder edge mixes in after
+    // the tube cascade. 0 = pure tube, 1 = fully replaced by diode edge.
+    void setDiodeBlend(float newBlend);
 
     void reset();
 
@@ -44,10 +53,12 @@ private:
 
     double sampleRate;
     float drive = 0.6f;
+    float diodeBlend = 0.0f;
 
     CouplingHighpass preGainHighpass;
     std::array<KorenTriodeStage, numStages> stages;
     std::array<CouplingHighpass, numStages - 1> interStageHighpass;
+    DiodeClipperStage diodeClipper;
 
     Oversampler4x oversampler;
 };
