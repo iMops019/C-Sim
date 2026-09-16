@@ -63,3 +63,10 @@ add_executable(KorenTriodeStageTest
     Source/dsp/KorenTriodeStage.cpp
 )
 target_include_directories(KorenTriodeStageTest PRIVATE Source/dsp)
+
+add_executable(OversamplerAliasingTest
+    Tests/OversamplerAliasingTest.cpp
+    Source/dsp/KorenTriodeStage.cpp
+    Source/dsp/Oversampler4x.cpp
+)
+target_include_directories(OversamplerAliasingTest PRIVATE Source/dsp)
