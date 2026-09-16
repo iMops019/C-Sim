@@ -43,6 +43,13 @@ public:
     // fine: real sag doesn't perfectly renormalise either.
     float processSampleWithPlateVoltage(float input, double dynamicPlateVoltage) const noexcept;
 
+    // As processSample(), but evaluated at a caller-supplied grid bias -
+    // for a bias-modulated tremolo, where an LFO shifts the tube's
+    // operating point directly (changing gain AND a bit of harmonic
+    // content as it moves) rather than just multiplying the output by an
+    // amplitude envelope.
+    float processSampleWithBias(float input, double dynamicGridBias) const noexcept;
+
 private:
     static double plateCurrent(double vg, double vp, const Parameters& p) noexcept;
 

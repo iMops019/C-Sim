@@ -66,3 +66,12 @@ float KorenTriodeStage::processSampleWithPlateVoltage(float input, double dynami
 
     return static_cast<float>(-(ip - quiescentAtDynamicVp) * outputNormalisation);
 }
+
+float KorenTriodeStage::processSampleWithBias(float input, double dynamicGridBias) const noexcept
+{
+    auto vg = dynamicGridBias + static_cast<double>(input) * params.inputToGridVolts;
+    auto ip = plateCurrent(vg, params.plateVoltage, params);
+    auto quiescentAtDynamicBias = plateCurrent(dynamicGridBias, params.plateVoltage, params);
+
+    return static_cast<float>(-(ip - quiescentAtDynamicBias) * outputNormalisation);
+}

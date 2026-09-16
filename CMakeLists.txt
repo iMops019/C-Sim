@@ -99,6 +99,13 @@ add_executable(DiodeClipperStageTest
 )
 target_include_directories(DiodeClipperStageTest PRIVATE Source/dsp)
 
+add_executable(DynamicGainStageTest
+    Tests/DynamicGainStageTest.cpp
+    Source/dsp/DynamicGainStage.cpp
+    Source/dsp/KorenTriodeStage.cpp
+)
+target_include_directories(DynamicGainStageTest PRIVATE Source/dsp)
+
 add_executable(MetalAmpFullChainTest
     Tests/MetalAmpFullChainTest.cpp
     Source/dsp/MetalPreampChain.cpp
