@@ -132,6 +132,22 @@ add_executable(EmoAmpFullChainTest
 )
 target_include_directories(EmoAmpFullChainTest PRIVATE Source/dsp)
 
+add_executable(HybridAmpTest
+    Tests/HybridAmpTest.cpp
+    Source/dsp/HybridAmp.cpp
+    Source/dsp/DynamicGainStage.cpp
+    Source/dsp/KorenTriodeStage.cpp
+    Source/dsp/MetalPreampChain.cpp
+    Source/dsp/Oversampler4x.cpp
+    Source/dsp/DiodeClipperStage.cpp
+    Source/dsp/NoiseGate.cpp
+    Source/dsp/FenderToneStack.cpp
+    Source/dsp/SpringReverb.cpp
+    Source/dsp/BiasModulatedTremolo.cpp
+    Source/dsp/PowerAmpStage.cpp
+)
+target_include_directories(HybridAmpTest PRIVATE Source/dsp)
+
 add_executable(MetalAmpFullChainTest
     Tests/MetalAmpFullChainTest.cpp
     Source/dsp/MetalPreampChain.cpp
