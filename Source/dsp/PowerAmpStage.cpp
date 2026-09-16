@@ -21,17 +21,20 @@ namespace
 }
 
 PowerAmpStage::PowerAmpStage(double sampleRateToUse)
-    : sampleRate(sampleRateToUse), powerTriode(makePowerTubeParameters())
+    : sampleRate(sampleRateToUse), powerTriode(makePowerTubeParameters()), oversampler(sampleRateToUse)
 {
-    sagAttackCoeff = EnvelopeUtils::timeToCoeff(0.015, sampleRate);  // ~15ms - rail droops fast under demand
-    sagReleaseCoeff = EnvelopeUtils::timeToCoeff(0.150, sampleRate); // ~150ms - PSU cap recovery
+    auto oversampledRate = oversampler.getOversampledRate();
+    sagAttackCoeff = EnvelopeUtils::timeToCoeff(0.015, oversampledRate);  // ~15ms - rail droops fast under demand
+    sagReleaseCoeff = EnvelopeUtils::timeToCoeff(0.150, oversampledRate); // ~150ms - PSU cap recovery
 }
 
 void PowerAmpStage::setSampleRate(double newSampleRate)
 {
     sampleRate = newSampleRate;
-    sagAttackCoeff = EnvelopeUtils::timeToCoeff(0.015, sampleRate);
-    sagReleaseCoeff = EnvelopeUtils::timeToCoeff(0.150, sampleRate);
+    oversampler = Oversampler4x(sampleRate);
+    auto oversampledRate = oversampler.getOversampledRate();
+    sagAttackCoeff = EnvelopeUtils::timeToCoeff(0.015, oversampledRate);
+    sagReleaseCoeff = EnvelopeUtils::timeToCoeff(0.150, oversampledRate);
     reset();
 }
 
@@ -49,9 +52,10 @@ void PowerAmpStage::reset()
 {
     sagEnvelope = 0.0;
     previousOutput = 0.0f;
+    oversampler.reset();
 }
 
-float PowerAmpStage::processSample(float input) noexcept
+float PowerAmpStage::processOversampledSample(float x) noexcept
 {
     // Negative feedback: the Koren stage inverts (grid up -> plate voltage
     // down), so for THIS stage, stabilising/gain-reducing feedback means
@@ -59,8 +63,9 @@ float PowerAmpStage::processSample(float input) noexcept
     // subtracting - subtracting would be negative feedback for a
     // non-inverting stage, but positive (gain-increasing) feedback here.
     // One-sample delayed to avoid an algebraic loop; inaudible at audio
-    // sample rates.
-    float stageInput = input + previousOutput * feedbackAmount;
+    // sample rates (and now an even shorter delay in oversampled-sample
+    // terms, so tighter still).
+    float stageInput = x + previousOutput * feedbackAmount;
 
     // Sag: a smoothed envelope of the stage's own demand droops the
     // effective B+ rail, recovering over the release time.
@@ -81,8 +86,8 @@ float PowerAmpStage::processSample(float input) noexcept
     return output;
 }
 
-void PowerAmpStage::processBlock(const float* input, float* output, int numSamples) noexcept
+void PowerAmpStage::processBlock(const float* input, float* output, int numSamples)
 {
-    for (int n = 0; n < numSamples; ++n)
-        output[n] = processSample(input[n]);
+    oversampler.processBlock(input, output, numSamples,
+                              [this](float x) { return processOversampledSample(x); });
 }

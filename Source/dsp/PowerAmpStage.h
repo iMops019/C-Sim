@@ -1,6 +1,7 @@
 #pragma once
 
 #include "KorenTriodeStage.h"
+#include "Oversampler4x.h"
 
 // The power amp stage: push-pull output tubes, B+ supply sag, and a
 // negative feedback loop - the three things step 5 of the build order
@@ -24,6 +25,12 @@
 //    an algebraic loop) output is subtracted from the input. Real power
 //    amps trade gain for damping/tightness this way - more feedback,
 //    less gain, tighter and faster-settling low end.
+//
+// Runs inside a 4x oversampled block like every other nonlinear stage in
+// this toolkit - originally missing here (unlike MetalPreampChain and
+// BiasModulatedTremolo), added once this was about to become directly
+// user-placeable in the app's rack, where it can be driven hard on its
+// own without an upstream oversampled stage's filtering to help mask it.
 class PowerAmpStage
 {
 public:
@@ -36,10 +43,10 @@ public:
 
     void reset();
 
-    void processBlock(const float* input, float* output, int numSamples) noexcept;
+    void processBlock(const float* input, float* output, int numSamples);
 
 private:
-    float processSample(float input) noexcept;
+    float processOversampledSample(float x) noexcept;
 
     double sampleRate;
     float sagAmount = 0.4f;
@@ -52,6 +59,7 @@ private:
     float previousOutput = 0.0f;
 
     KorenTriodeStage powerTriode;
+    Oversampler4x oversampler;
 
     // Power tubes run a noticeably higher B+ rail than preamp stages.
     static constexpr double nominalPlateVoltage = 300.0;
