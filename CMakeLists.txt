@@ -53,3 +53,13 @@ target_link_libraries(CSim
         juce::juce_recommended_lto_flags
         juce::juce_recommended_warning_flags
 )
+
+# Standalone console diagnostics for the circuit-modeling DSP toolkit
+# (Source/dsp/). No JUCE dependency by design - these test one module in
+# isolation before it's wired into the app, per the "build order" plan:
+# each new dsp/ module should get a matching Tests/*Test.cpp target.
+add_executable(KorenTriodeStageTest
+    Tests/KorenTriodeStageTest.cpp
+    Source/dsp/KorenTriodeStage.cpp
+)
+target_include_directories(KorenTriodeStageTest PRIVATE Source/dsp)
