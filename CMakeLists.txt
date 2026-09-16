@@ -106,6 +106,12 @@ add_executable(DynamicGainStageTest
 )
 target_include_directories(DynamicGainStageTest PRIVATE Source/dsp)
 
+add_executable(SpringReverbTest
+    Tests/SpringReverbTest.cpp
+    Source/dsp/SpringReverb.cpp
+)
+target_include_directories(SpringReverbTest PRIVATE Source/dsp)
+
 add_executable(MetalAmpFullChainTest
     Tests/MetalAmpFullChainTest.cpp
     Source/dsp/MetalPreampChain.cpp
