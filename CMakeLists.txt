@@ -120,6 +120,18 @@ add_executable(BiasModulatedTremoloTest
 )
 target_include_directories(BiasModulatedTremoloTest PRIVATE Source/dsp)
 
+add_executable(EmoAmpFullChainTest
+    Tests/EmoAmpFullChainTest.cpp
+    Source/dsp/DynamicGainStage.cpp
+    Source/dsp/KorenTriodeStage.cpp
+    Source/dsp/FenderToneStack.cpp
+    Source/dsp/SpringReverb.cpp
+    Source/dsp/BiasModulatedTremolo.cpp
+    Source/dsp/Oversampler4x.cpp
+    Source/dsp/PowerAmpStage.cpp
+)
+target_include_directories(EmoAmpFullChainTest PRIVATE Source/dsp)
+
 add_executable(MetalAmpFullChainTest
     Tests/MetalAmpFullChainTest.cpp
     Source/dsp/MetalPreampChain.cpp
