@@ -31,6 +31,15 @@ target_sources(CSim
         Source/TunerEngine.cpp
         Source/TunerComponent.cpp
         Source/TunerWindow.cpp
+        Source/TriodeStagePedal.cpp
+        Source/ToneStackPedal.cpp
+        Source/PowerAmpPedal.cpp
+        Source/DiodeClipperPedal.cpp
+        Source/dsp/KorenTriodeStage.cpp
+        Source/dsp/Oversampler4x.cpp
+        Source/dsp/FenderToneStack.cpp
+        Source/dsp/PowerAmpStage.cpp
+        Source/dsp/DiodeClipperStage.cpp
 )
 
 target_compile_definitions(CSim

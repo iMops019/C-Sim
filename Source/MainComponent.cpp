@@ -5,6 +5,10 @@
 #include "CleanAmpPedal.h"
 #include "Peavey5150Pedal.h"
 #include "FourByTwelveCabPedal.h"
+#include "TriodeStagePedal.h"
+#include "ToneStackPedal.h"
+#include "PowerAmpPedal.h"
+#include "DiodeClipperPedal.h"
 
 namespace
 {
@@ -25,12 +29,25 @@ namespace
     {
         return { { "4x12 V30", [] { return std::make_unique<FourByTwelveCabPedal>(); } } };
     }
+
+    // Raw circuit-level building blocks - stack these yourself (Triode
+    // Stage, Tone Stack, Diode Clipper, Power Amp, in whatever order and
+    // however many you like) to build your own amp from scratch, rather
+    // than only using the fixed preset amps above.
+    std::vector<PedalListComponent::CatalogItem> makeLabCatalog()
+    {
+        return { { "Triode Stage", [] { return std::make_unique<TriodeStagePedal>(); } },
+                 { "Tone Stack", [] { return std::make_unique<ToneStackPedal>(); } },
+                 { "Diode Clipper", [] { return std::make_unique<DiodeClipperPedal>(); } },
+                 { "Power Amp", [] { return std::make_unique<PowerAmpPedal>(); } } };
+    }
 }
 
 MainComponent::MainComponent()
     : pedalList(signalChain, makePedalCatalog()),
       ampList(signalChain, makeAmpCatalog()),
-      cabList(signalChain, makeCabCatalog())
+      cabList(signalChain, makeCabCatalog()),
+      labList(signalChain, makeLabCatalog())
 {
     addAndMakeVisible(settingsButton);
     settingsButton.onClick = [this] { openSettings(); };
@@ -61,6 +78,7 @@ MainComponent::MainComponent()
     tabs.addTab("Pedals", juce::Colours::darkgrey, &pedalList, false);
     tabs.addTab("Amps", juce::Colours::darkgrey, &ampList, false);
     tabs.addTab("Cabs", juce::Colours::darkgrey, &cabList, false);
+    tabs.addTab("Lab", juce::Colours::darkgrey, &labList, false);
     addAndMakeVisible(tabs);
 
     setSize(800, 600);
