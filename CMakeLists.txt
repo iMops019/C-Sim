@@ -112,6 +112,14 @@ add_executable(SpringReverbTest
 )
 target_include_directories(SpringReverbTest PRIVATE Source/dsp)
 
+add_executable(BiasModulatedTremoloTest
+    Tests/BiasModulatedTremoloTest.cpp
+    Source/dsp/BiasModulatedTremolo.cpp
+    Source/dsp/KorenTriodeStage.cpp
+    Source/dsp/Oversampler4x.cpp
+)
+target_include_directories(BiasModulatedTremoloTest PRIVATE Source/dsp)
+
 add_executable(MetalAmpFullChainTest
     Tests/MetalAmpFullChainTest.cpp
     Source/dsp/MetalPreampChain.cpp
