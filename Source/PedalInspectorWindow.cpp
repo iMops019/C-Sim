@@ -2,6 +2,8 @@
 #include "KnobComponent.h"
 #include "ModernLookAndFeel.h"
 
+#include <algorithm>
+
 namespace
 {
     // The actual controls, in their own scrollable area so a pedal with a
@@ -14,8 +16,17 @@ namespace
         InspectorContent(Pedal& pedalToShow, std::function<void()> onRemoveRequested)
             : pedal(pedalToShow)
         {
+            customEditor = pedal.createCustomEditor();
+            auto handledParams = pedal.getCustomEditorHandledParameters();
+
+            if (customEditor != nullptr)
+                addAndMakeVisible(*customEditor);
+
             for (auto* param : pedal.getParameters())
             {
+                if (std::find(handledParams.begin(), handledParams.end(), param) != handledParams.end())
+                    continue; // already shown by the custom editor above - don't duplicate it as a knob
+
                 auto* knob = knobs.add(new KnobComponent(*param));
                 knobArea.addAndMakeVisible(knob);
             }
@@ -49,7 +60,17 @@ namespace
             removeButton.onClick = std::move(onRemoveRequested);
             addAndMakeVisible(removeButton);
 
-            setSize(340, 412);
+            // A custom editor (e.g. CabinetVisualEditor) needs its own
+            // fixed-height area above the knob grid, and typically wants
+            // a wider window than the plain knob grid does on its own.
+            auto width = 340;
+            auto height = 412;
+            if (customEditor != nullptr)
+            {
+                width = juce::jmax(width, customEditor->getWidth() + 24);
+                height += customEditor->getHeight() + 8;
+            }
+            setSize(width, height);
         }
 
         void resized() override
@@ -69,6 +90,14 @@ namespace
                 auto irArea = area.removeFromBottom(28);
                 loadIRButton.setBounds(irArea.reduced(30, 0));
                 area.removeFromBottom(8);
+            }
+
+            if (customEditor != nullptr)
+            {
+                auto customArea = area.removeFromTop(customEditor->getHeight());
+                customEditor->setBounds(customArea.withSizeKeepingCentre(
+                    juce::jmin(customArea.getWidth(), customEditor->getWidth()), customArea.getHeight()));
+                area.removeFromTop(8);
             }
 
             knobViewport.setBounds(area);
@@ -121,6 +150,7 @@ namespace
         Pedal& pedal;
         juce::TextButton footswitch, loadIRButton, removeButton;
         std::unique_ptr<juce::FileChooser> fileChooser;
+        std::unique_ptr<juce::Component> customEditor;
 
         juce::OwnedArray<KnobComponent> knobs;
         juce::Component knobArea;

@@ -19,10 +19,18 @@
 #include "PrecisionDrivePedal.h"
 #include "DistortionPedal.h"
 #include "PalmMuteTamerPedal.h"
+#include "MorningGloryPedal.h"
+#include "DynaCompPedal.h"
+#include "WardenPedal.h"
 #include "MesaRectifierPreampPedal.h"
 #include "FortinMeshuggahPreampPedal.h"
 #include "DiezelVH4PreampPedal.h"
 #include "MesaDiezelHybridPreampPedal.h"
+#include "FenderTwinReverbPreampPedal.h"
+#include "FenderPrincetonReverbPreampPedal.h"
+#include "FenderDeluxeReverbPreampPedal.h"
+#include "FenderHybridReverbPreampPedal.h"
+#include "FenderStyleAmpPedal.h"
 
 namespace PedalCatalog
 {
@@ -36,7 +44,10 @@ namespace PedalCatalog
                  { "Transpose", [] { return std::make_unique<TransposePedal>(); } },
                  { "Precision Drive", [] { return std::make_unique<PrecisionDrivePedal>(); } },
                  { "Distortion", [] { return std::make_unique<DistortionPedal>(); } },
-                 { "Palm Mute Tamer", [] { return std::make_unique<PalmMuteTamerPedal>(); } } };
+                 { "Palm Mute Tamer", [] { return std::make_unique<PalmMuteTamerPedal>(); } },
+                 { "Morning Glory", [] { return std::make_unique<MorningGloryPedal>(); } },
+                 { "Dyna Comp", [] { return std::make_unique<DynaCompPedal>(); } },
+                 { "The Warden", [] { return std::make_unique<WardenPedal>(); } } };
     }
 
     std::vector<PedalListComponent::CatalogItem> amps()
@@ -46,7 +57,12 @@ namespace PedalCatalog
                  { "Mesa Rectifier Preamp", [] { return std::make_unique<MesaRectifierPreampPedal>(); } },
                  { "Fortin Meshuggah Preamp", [] { return std::make_unique<FortinMeshuggahPreampPedal>(); } },
                  { "Diezel VH4 Preamp", [] { return std::make_unique<DiezelVH4PreampPedal>(); } },
-                 { "Mesa/Diezel Hybrid Preamp", [] { return std::make_unique<MesaDiezelHybridPreampPedal>(); } } };
+                 { "Mesa/Diezel Hybrid Preamp", [] { return std::make_unique<MesaDiezelHybridPreampPedal>(); } },
+                 { "Fender Twin Reverb Preamp", [] { return std::make_unique<FenderTwinReverbPreampPedal>(); } },
+                 { "Fender Princeton Reverb Preamp", [] { return std::make_unique<FenderPrincetonReverbPreampPedal>(); } },
+                 { "Fender Deluxe Reverb Preamp", [] { return std::make_unique<FenderDeluxeReverbPreampPedal>(); } },
+                 { "Fender Twin/Princeton Hybrid Preamp", [] { return std::make_unique<FenderHybridReverbPreampPedal>(); } },
+                 { "Fender Style Amp (WIP)", [] { return std::make_unique<FenderStyleAmpPedal>(); } } };
     }
 
     std::vector<PedalListComponent::CatalogItem> cabs()

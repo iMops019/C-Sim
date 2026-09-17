@@ -92,6 +92,24 @@ void MainComponent::prepareToPlay(int samplesPerBlockExpected, double sampleRate
 
 void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& bufferToFill)
 {
+    // Flushes denormals to zero for this scope. Several pedals (tone
+    // stacks, reverbs, the power amp's sag/feedback state, any IIR
+    // filter) are recursive - their internal state decays toward zero
+    // during quiet passages and note decays but mathematically never
+    // reaches it, eventually going denormal. x86 handles denormal floats
+    // via a much slower microcode path, and with enough recursive state
+    // decaying at once (the newest, heaviest pedal in the rack right now
+    // stacks a tone stack, a shelf filter, and a full oversampled power
+    // amp stage, several times the recursive state of most other single
+    // pedals) that slowdown can be enough to miss the audio callback's
+    // deadline - which is exactly what a real-time buffer underrun sounds
+    // like: glitchy, stuttering, "robotic" artifacts, worst during
+    // sustained/decaying notes rather than constantly. This guard was
+    // missing from the callback entirely, so every pedal was exposed in
+    // theory; fixing it here protects all of them, not just the one that
+    // happened to surface it first.
+    juce::ScopedNoDenormals noDenormals;
+
     // Straight passthrough: copy each input channel to the matching output
     // channel with no processing, then run the result through whatever
     // pedals the user has manually added to the Signal Chain.
@@ -221,6 +239,35 @@ void MainComponent::openTuner()
 
 void MainComponent::openSavePresetDialog()
 {
+    // "Save Preset..." now offers a quick way to overwrite an existing
+    // preset (this pedal has been getting tweaked all session - retyping
+    // its exact name every time was the friction being reported) as well
+    // as starting a brand new one.
+    auto names = PresetManager::listPresetNames();
+
+    juce::PopupMenu menu;
+    menu.addItem(1, "Save as New Preset...");
+
+    if (! names.isEmpty())
+    {
+        menu.addSeparator();
+        menu.addSectionHeader("Overwrite Existing");
+        for (int i = 0; i < names.size(); ++i)
+            menu.addItem(i + 2, names[i]);
+    }
+
+    menu.showMenuAsync(juce::PopupMenu::Options().withTargetComponent(savePresetButton),
+                        [this, names](int chosenId)
+    {
+        if (chosenId == 1)
+            openNewPresetNameDialog();
+        else if (chosenId >= 2 && chosenId <= names.size() + 1)
+            confirmOverwritePreset(names[chosenId - 2]);
+    });
+}
+
+void MainComponent::openNewPresetNameDialog()
+{
     auto* alertWindow = new juce::AlertWindow("Save Preset", "Enter a name for this preset:", juce::AlertWindow::NoIcon);
     alertWindow->addTextEditor("name", "My Preset");
     alertWindow->addButton("Save", 1, juce::KeyPress(juce::KeyPress::returnKey));
@@ -234,6 +281,21 @@ void MainComponent::openSavePresetDialog()
             if (name.isNotEmpty())
                 PresetManager::savePreset(signalChain, name);
         }
+    }), true);
+}
+
+void MainComponent::confirmOverwritePreset(const juce::String& presetName)
+{
+    auto* alertWindow = new juce::AlertWindow("Overwrite Preset",
+                                               "Overwrite \"" + presetName + "\" with the current chain? This can't be undone.",
+                                               juce::AlertWindow::WarningIcon);
+    alertWindow->addButton("Overwrite", 1, juce::KeyPress(juce::KeyPress::returnKey));
+    alertWindow->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
+
+    alertWindow->enterModalState(true, juce::ModalCallbackFunction::create([this, presetName](int result)
+    {
+        if (result == 1)
+            PresetManager::savePreset(signalChain, presetName);
     }), true);
 }
 

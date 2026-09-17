@@ -71,6 +71,78 @@ namespace
         { 3000.0f, 0.20f, 0.008f },
     };
 
+    // Fender-voiced cabs (real Jensen/Oxford-speaker character: brighter,
+    // more extended top end, a much smaller midrange hump than a
+    // Celestion Greenback or V30 - the source of the classic "blackface
+    // chime"). Cabinet size scales the low-body-mode frequency (a
+    // smaller speaker/enclosure resonates higher, not lower) and how much
+    // low end survives at all, and scales decay times up with cabinet
+    // size (more cone area/enclosure volume sustains longer) - the same
+    // real relationship the existing British-voiced tables already use
+    // (compare openBackModes' faster decay to greenbackModes' looser one),
+    // just applied across a size range instead of an open/sealed one.
+
+    // Smallest: a single 10" (Champ/Princeton-style Jensen/Oxford) - the
+    // brightest and thinnest of the four, quickest decay (least cone
+    // mass/enclosure volume), least low-end reinforcement.
+    constexpr ResonantMode fenderOneByTenModes[] = {
+        { 140.0f,  0.35f, 0.014f },
+        { 280.0f,  0.22f, 0.012f },
+        { 550.0f,  0.18f, 0.010f },
+        { 1000.0f, 0.20f, 0.009f },
+        { 2000.0f, 0.35f, 0.008f },
+        { 3200.0f, 0.45f, 0.007f },
+        { 4200.0f, 0.40f, 0.006f },
+        { 5500.0f, 0.30f, 0.005f },
+    };
+
+    // Two 10s (Super Reverb-style) - more total cone area than a single
+    // 10 means more low-end reinforcement and level, still the same
+    // bright/chimey character and a fairly quick decay.
+    constexpr ResonantMode fenderTwoByTenModes[] = {
+        { 120.0f,  0.45f, 0.020f },
+        { 240.0f,  0.30f, 0.018f },
+        { 480.0f,  0.22f, 0.015f },
+        { 900.0f,  0.20f, 0.013f },
+        { 1800.0f, 0.32f, 0.011f },
+        { 3000.0f, 0.42f, 0.009f },
+        { 4200.0f, 0.38f, 0.008f },
+        { 5500.0f, 0.26f, 0.006f },
+    };
+
+    // A single 12" (Deluxe/Twin-style Jensen C12N) - Fender's classic
+    // full-bodied clean chime: fuller low end than either 10" table and a
+    // smooth, extended top end, deliberately NOT the boxy honk of
+    // comboModes above (that table is voiced for the metal-amp-oriented
+    // "1x12 Combo" pairing, a different design target from this one).
+    constexpr ResonantMode fenderOneByTwelveModes[] = {
+        { 100.0f,  0.50f, 0.028f },
+        { 200.0f,  0.32f, 0.024f },
+        { 420.0f,  0.22f, 0.020f },
+        { 750.0f,  0.18f, 0.016f },
+        { 1600.0f, 0.28f, 0.013f },
+        { 2800.0f, 0.42f, 0.011f },
+        { 3800.0f, 0.38f, 0.009f },
+        { 5000.0f, 0.28f, 0.007f },
+        { 6200.0f, 0.18f, 0.006f },
+    };
+
+    // Four 12s, Fender-voiced - the biggest and lowest-extending of the
+    // four (most cone area/enclosure volume to couple bass), longest
+    // decay, same bright/extended-top-end character throughout (not the
+    // V30's scooped mid or the Greenback's midrange hump).
+    constexpr ResonantMode fenderFourByTwelveModes[] = {
+        { 85.0f,   0.55f, 0.035f },
+        { 170.0f,  0.38f, 0.030f },
+        { 380.0f,  0.25f, 0.024f },
+        { 700.0f,  0.20f, 0.019f },
+        { 1500.0f, 0.26f, 0.015f },
+        { 2700.0f, 0.40f, 0.012f },
+        { 3800.0f, 0.38f, 0.010f },
+        { 5000.0f, 0.30f, 0.008f },
+        { 6200.0f, 0.20f, 0.006f },
+    };
+
     struct ModeSet
     {
         const ResonantMode* modes;
@@ -85,6 +157,10 @@ namespace
             case cabFourByTwelveGreenback: return { greenbackModes, sizeof(greenbackModes) / sizeof(greenbackModes[0]), 80.0 };
             case cabTwoByTwelveOpenBack:   return { openBackModes, sizeof(openBackModes) / sizeof(openBackModes[0]), 100.0 };
             case cabOneByTwelveCombo:      return { comboModes, sizeof(comboModes) / sizeof(comboModes[0]), 110.0 };
+            case cabFenderOneByTen:        return { fenderOneByTenModes, sizeof(fenderOneByTenModes) / sizeof(fenderOneByTenModes[0]), 130.0 };
+            case cabFenderTwoByTen:        return { fenderTwoByTenModes, sizeof(fenderTwoByTenModes) / sizeof(fenderTwoByTenModes[0]), 110.0 };
+            case cabFenderOneByTwelve:     return { fenderOneByTwelveModes, sizeof(fenderOneByTwelveModes) / sizeof(fenderOneByTwelveModes[0]), 90.0 };
+            case cabFenderFourByTwelve:    return { fenderFourByTwelveModes, sizeof(fenderFourByTwelveModes) / sizeof(fenderFourByTwelveModes[0]), 75.0 };
             case cabFourByTwelveV30:
             default:                        return { v30Modes, sizeof(v30Modes) / sizeof(v30Modes[0]), 90.0 };
         }
@@ -253,6 +329,22 @@ namespace
             auto gain = 1.0f - (static_cast<float>(i) / static_cast<float>(fadeSamples));
             data[idx] *= gain;
         }
+    }
+}
+
+int speakerCount(int cabType)
+{
+    switch (cabType)
+    {
+        case cabFourByTwelveV30:
+        case cabFourByTwelveGreenback:
+        case cabFenderFourByTwelve:  return 4;
+        case cabTwoByTwelveOpenBack:
+        case cabFenderTwoByTen:      return 2;
+        case cabOneByTwelveCombo:
+        case cabFenderOneByTen:
+        case cabFenderOneByTwelve:
+        default:                     return 1;
     }
 }
 

@@ -1,4 +1,5 @@
 #include "CabinetPedal.h"
+#include "CabinetVisualEditor.h"
 
 #include <cmath>
 
@@ -53,6 +54,14 @@ void CabinetPedal::reloadMicIRIfNeeded(int mic, bool cabChanged)
 
     lastType = type;
     lastPositionStep = positionStep;
+
+    // Touching Mic A's own Type/Position knobs resynthesizes it, ending
+    // the one-shot loaded-IR override (see loadImpulseResponseFile) - so
+    // the makeup gain that only applies to a real loaded file (see
+    // process()) needs to switch off here too, not just when a new file
+    // is loaded.
+    if (isA)
+        usingLoadedIR = false;
 
     auto cabType = static_cast<int>(std::round(cab.get()));
     auto& conv = isA ? convA : convB;
@@ -119,6 +128,11 @@ bool CabinetPedal::loadImpulseResponseFile(const juce::File& file)
     // doesn't change for anyone not touching this feature at all.
     air.set(45.0f);
 
+    // Makeup gain for the loaded file itself - see the comment on
+    // usingLoadedIR/process() for why this exists alongside
+    // Normalise::yes above, not instead of it.
+    usingLoadedIR = true;
+
     return true;
 }
 
@@ -149,6 +163,27 @@ void CabinetPedal::process(float* const* channelData, int numChannels, int numSa
         juce::dsp::AudioBlock<float> block(scratchA.getArrayOfWritePointers(), static_cast<size_t>(channelsToUse), static_cast<size_t>(numSamples));
         juce::dsp::ProcessContextReplacing<float> context(block);
         convA.process(context);
+
+        // Makeup gain for a real, user-loaded IR file specifically (not
+        // the synthetic cabs, which already normalise their own peak
+        // level - see generateMicIR's own applyGain call). JUCE's
+        // Convolution::Normalise::yes (passed on every load in this
+        // file) is a one-time scale of the IR itself against a fixed
+        // sum-of-squared-magnitude target, not a runtime match to the
+        // dry signal's own level - a real commercial cab IR, especially
+        // a bright/thin close-mic capture, can still land quieter after
+        // that than a synthetic cab's own tuned output. Standard
+        // commercial IR loaders compensate with roughly +6 to +12dB of
+        // fixed makeup gain on top of whatever their own normalisation
+        // does; +9dB (the middle of that range) applied here only while
+        // Mic A is actually a loaded file matches that convention
+        // without touching the Level knob's own meaning for everyone
+        // else.
+        if (usingLoadedIR)
+        {
+            constexpr float loadedIRMakeupGainDb = 9.0f;
+            block.multiplyBy(juce::Decibels::decibelsToGain(loadedIRMakeupGainDb));
+        }
     }
     {
         juce::dsp::AudioBlock<float> block(scratchB.getArrayOfWritePointers(), static_cast<size_t>(channelsToUse), static_cast<size_t>(numSamples));
@@ -234,4 +269,14 @@ std::vector<PedalParameter*> CabinetPedal::getParameters()
 {
     return { &cab, &micTypeA, &micPositionA, &micTypeB, &micPositionB, &micBlend,
              &liveStudio, &roomAmount, &lowCut, &highCut, &resonance, &air, &width, &level };
+}
+
+std::unique_ptr<juce::Component> CabinetPedal::createCustomEditor()
+{
+    return std::make_unique<CabinetVisualEditor>(cab, micTypeA, micPositionA, micTypeB, micPositionB);
+}
+
+std::vector<PedalParameter*> CabinetPedal::getCustomEditorHandledParameters()
+{
+    return { &cab, &micTypeA, &micPositionA, &micTypeB, &micPositionB };
 }

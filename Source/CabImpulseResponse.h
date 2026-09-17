@@ -16,7 +16,18 @@ namespace CabImpulseResponse
         cabFourByTwelveGreenback = 1,
         cabTwoByTwelveOpenBack = 2,
         cabOneByTwelveCombo = 3,
-        numCabTypes = 4
+        // Fender-voiced cabs, appended after the existing British/metal
+        // ones rather than inserted before them, so a saved preset's
+        // numeric Cab index still means what it always meant. Real Fender
+        // combos overwhelmingly used Jensen/Oxford/Eminence speakers
+        // voiced brighter and less mid-humped than a Celestion Greenback
+        // or V30 - extended, chimey top end and a comparatively small
+        // midrange bump, the source of the classic "blackface chime."
+        cabFenderOneByTen = 4,   // Champ/Princeton-style single 10" - brightest, thinnest, least low end
+        cabFenderTwoByTen = 5,   // Super Reverb-style twin 10" - fuller and louder than one 10, still chimey
+        cabFenderOneByTwelve = 6, // Deluxe/Twin-style single 12" - Fender's classic full-bodied clean chime
+        cabFenderFourByTwelve = 7, // a bigger Fender-voiced cab - the most low end/air of the four, same bright character
+        numCabTypes = 8
     };
 
     enum MicType
@@ -33,6 +44,12 @@ namespace CabImpulseResponse
     // edge character and the darker, boomier center character - a real,
     // audible axis, not just a label.
     juce::AudioBuffer<float> generateMicIR(double sampleRate, int cabType, int micType, float positionFraction);
+
+    // How many speakers this cab actually has, for the Inspector's visual
+    // cab drawing to lay out the right number of speaker circles - not
+    // used by the DSP itself (the resonant-mode model doesn't simulate
+    // individual speakers spatially), purely a UI fact about each cab.
+    int speakerCount(int cabType);
 
     // A distant room mic's take on the same cabinet: a handful of soft,
     // spaced-out reflections plus high-frequency air damping, layered

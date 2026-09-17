@@ -29,6 +29,8 @@ private:
     void openSettings();
     void openTuner();
     void openSavePresetDialog();
+    void openNewPresetNameDialog();
+    void confirmOverwritePreset(const juce::String& presetName);
     void openLoadPresetMenu();
     void saveCurrentSettings();
     void updateStatusLabel();

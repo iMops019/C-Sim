@@ -30,6 +30,7 @@ target_sources(CSim
         Source/Peavey5150Pedal.cpp
         Source/CabinetPedal.cpp
         Source/CabImpulseResponse.cpp
+        Source/CabinetVisualEditor.cpp
         Source/KnobComponent.cpp
         Source/PitchDetector.cpp
         Source/TunerEngine.cpp
@@ -52,6 +53,14 @@ target_sources(CSim
         Source/PalmMuteTamerPedal.cpp
         Source/DiezelVH4PreampPedal.cpp
         Source/MesaDiezelHybridPreampPedal.cpp
+        Source/FenderTwinReverbPreampPedal.cpp
+        Source/FenderPrincetonReverbPreampPedal.cpp
+        Source/FenderDeluxeReverbPreampPedal.cpp
+        Source/FenderHybridReverbPreampPedal.cpp
+        Source/FenderStyleAmpPedal.cpp
+        Source/MorningGloryPedal.cpp
+        Source/DynaCompPedal.cpp
+        Source/WardenPedal.cpp
         Source/dsp/KorenTriodeStage.cpp
         Source/dsp/Oversampler4x.cpp
         Source/dsp/FenderToneStack.cpp
@@ -71,6 +80,15 @@ target_sources(CSim
         Source/dsp/PalmMuteTamer.cpp
         Source/dsp/DiezelVH4Preamp.cpp
         Source/dsp/MesaDiezelHybridPreamp.cpp
+        Source/dsp/FenderTwinReverbPreamp.cpp
+        Source/dsp/FenderPrincetonReverbPreamp.cpp
+        Source/dsp/FenderDeluxeReverbPreamp.cpp
+        Source/dsp/FenderHybridReverbPreamp.cpp
+        Source/dsp/FenderStyleAmp.cpp
+        Source/dsp/BassmanToneStack.cpp
+        Source/dsp/MorningGloryStage.cpp
+        Source/dsp/DynaCompStage.cpp
+        Source/dsp/WardenStage.cpp
 )
 
 target_compile_definitions(CSim
@@ -266,6 +284,61 @@ add_executable(DiezelVH4PreampTest
 )
 target_include_directories(DiezelVH4PreampTest PRIVATE Source/dsp)
 
+add_executable(FenderTwinReverbPreampTest
+    Tests/FenderTwinReverbPreampTest.cpp
+    Source/dsp/FenderTwinReverbPreamp.cpp
+    Source/dsp/MesaRectifierPreamp.cpp
+    Source/dsp/KorenTriodeStage.cpp
+    Source/dsp/Oversampler4x.cpp
+)
+target_include_directories(FenderTwinReverbPreampTest PRIVATE Source/dsp)
+
+add_executable(FenderPrincetonReverbPreampTest
+    Tests/FenderPrincetonReverbPreampTest.cpp
+    Source/dsp/FenderPrincetonReverbPreamp.cpp
+    Source/dsp/FenderTwinReverbPreamp.cpp
+    Source/dsp/KorenTriodeStage.cpp
+    Source/dsp/Oversampler4x.cpp
+)
+target_include_directories(FenderPrincetonReverbPreampTest PRIVATE Source/dsp)
+
+add_executable(FenderDeluxeReverbPreampTest
+    Tests/FenderDeluxeReverbPreampTest.cpp
+    Source/dsp/FenderDeluxeReverbPreamp.cpp
+    Source/dsp/FenderPrincetonReverbPreamp.cpp
+    Source/dsp/FenderTwinReverbPreamp.cpp
+    Source/dsp/KorenTriodeStage.cpp
+    Source/dsp/Oversampler4x.cpp
+)
+target_include_directories(FenderDeluxeReverbPreampTest PRIVATE Source/dsp)
+
+add_executable(FenderHybridReverbPreampTest
+    Tests/FenderHybridReverbPreampTest.cpp
+    Source/dsp/FenderHybridReverbPreamp.cpp
+    Source/dsp/KorenTriodeStage.cpp
+    Source/dsp/Oversampler4x.cpp
+)
+target_include_directories(FenderHybridReverbPreampTest PRIVATE Source/dsp)
+
+add_executable(MorningGloryStageTest
+    Tests/MorningGloryStageTest.cpp
+    Source/dsp/MorningGloryStage.cpp
+    Source/dsp/Oversampler4x.cpp
+)
+target_include_directories(MorningGloryStageTest PRIVATE Source/dsp)
+
+add_executable(DynaCompStageTest
+    Tests/DynaCompStageTest.cpp
+    Source/dsp/DynaCompStage.cpp
+)
+target_include_directories(DynaCompStageTest PRIVATE Source/dsp)
+
+add_executable(WardenStageTest
+    Tests/WardenStageTest.cpp
+    Source/dsp/WardenStage.cpp
+)
+target_include_directories(WardenStageTest PRIVATE Source/dsp)
+
 add_executable(MesaDiezelHybridPreampTest
     Tests/MesaDiezelHybridPreampTest.cpp
     Source/dsp/MesaDiezelHybridPreamp.cpp
@@ -274,3 +347,17 @@ add_executable(MesaDiezelHybridPreampTest
     Source/dsp/Oversampler4x.cpp
 )
 target_include_directories(MesaDiezelHybridPreampTest PRIVATE Source/dsp)
+
+add_executable(FenderStyleAmpTest
+    Tests/FenderStyleAmpTest.cpp
+    Source/dsp/FenderStyleAmp.cpp
+    Source/dsp/KorenTriodeStage.cpp
+    Source/dsp/Oversampler4x.cpp
+)
+target_include_directories(FenderStyleAmpTest PRIVATE Source/dsp)
+
+add_executable(BassmanToneStackTest
+    Tests/BassmanToneStackTest.cpp
+    Source/dsp/BassmanToneStack.cpp
+)
+target_include_directories(BassmanToneStackTest PRIVATE Source/dsp)

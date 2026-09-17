@@ -40,6 +40,11 @@ public:
     bool supportsImpulseResponseFile() const override { return true; }
     bool loadImpulseResponseFile(const juce::File& file) override;
 
+    // A drawn cab with draggable mic markers in place of the Cab/Mic
+    // Type/Position knobs - see CabinetVisualEditor.
+    std::unique_ptr<juce::Component> createCustomEditor() override;
+    std::vector<PedalParameter*> getCustomEditorHandledParameters() override;
+
 private:
     static constexpr int maxChannels = 2;
 
@@ -61,8 +66,14 @@ private:
     int lastCab = -1, lastMicTypeA = -1, lastMicTypeB = -1, lastLiveStudio = -1;
     int lastMicPositionAStep = -1, lastMicPositionBStep = -1;
 
-    PedalParameter cab          { "Cab",         0.0f, 3.0f,   0.0f,
-                                   { "4x12 V30", "4x12 Greenback", "2x12 Open Back", "1x12 Combo" } };
+    // True while Mic A is a real, user-loaded IR file rather than a
+    // synthetic one - see loadImpulseResponseFile()/reloadMicIRIfNeeded()
+    // and the makeup-gain comment in process().
+    bool usingLoadedIR = false;
+
+    PedalParameter cab          { "Cab",         0.0f, 7.0f,   0.0f,
+                                   { "4x12 V30", "4x12 Greenback", "2x12 Open Back", "1x12 Combo",
+                                     "Fender 1x10", "Fender 2x10", "Fender 1x12", "Fender 4x12" } };
     PedalParameter micTypeA     { "Mic A",       0.0f, 1.0f,   0.0f, { "Dynamic", "Ribbon" } };
     PedalParameter micPositionA { "Position A",  0.0f, 100.0f, 30.0f };
     PedalParameter micTypeB     { "Mic B",       0.0f, 1.0f,   1.0f, { "Dynamic", "Ribbon" } };

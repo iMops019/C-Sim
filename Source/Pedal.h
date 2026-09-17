@@ -1,7 +1,9 @@
 #pragma once
 
 #include <juce_core/juce_core.h>
+#include <juce_gui_basics/juce_gui_basics.h>
 #include <atomic>
+#include <memory>
 #include <vector>
 
 #include "PedalParameter.h"
@@ -28,6 +30,16 @@ public:
     // that can load a real impulse response in place of its built-in one).
     virtual bool supportsImpulseResponseFile() const { return false; }
     virtual bool loadImpulseResponseFile(const juce::File&) { return false; }
+
+    // Optional custom visual editor, shown in the Inspector window in
+    // place of the generic knob grid for whichever parameters it manages
+    // (e.g. a drawn cabinet with draggable mic markers instead of Cab/Mic
+    // dropdown knobs). Null by default - most pedals are fine with plain
+    // knobs. When non-null, getCustomEditorHandledParameters() must list
+    // every PedalParameter the returned editor manages, so the Inspector
+    // doesn't also render a redundant knob for it.
+    virtual std::unique_ptr<juce::Component> createCustomEditor() { return nullptr; }
+    virtual std::vector<PedalParameter*> getCustomEditorHandledParameters() { return {}; }
 
     std::atomic<bool> bypassed { false };
 
