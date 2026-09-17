@@ -41,6 +41,13 @@ public:
     void setSag(float amount);      // 0..1: depth of B+ droop under sustained drive
     void setFeedback(float amount); // 0..1: more feedback = less gain, more damping/tightness
 
+    // 0..1: how hard the input is driven into the power tube nonlinearity
+    // - what actually determines whether you get "power amp breakup" at
+    // all, unlike a watts spec. Defaults to 0 (a straight 1x pass into
+    // the stage, i.e. this control's prior implicit behavior before it
+    // existed) so callers that never touch this see no change.
+    void setDrive(float amount);
+
     void reset();
 
     void processBlock(const float* input, float* output, int numSamples);
@@ -51,6 +58,8 @@ private:
     double sampleRate;
     float sagAmount = 0.4f;
     float feedbackAmount = 0.3f;
+    float driveAmount = 0.0f;
+    static constexpr float driveRange = 5.0f; // 1x to 6x into the stage
 
     double sagEnvelope = 0.0;
     double sagAttackCoeff = 0.0;

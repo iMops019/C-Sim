@@ -18,13 +18,17 @@ target_sources(CSim
         Source/MainComponent.cpp
         Source/SettingsWindow.cpp
         Source/SignalChainComponent.cpp
+        Source/PedalInspectorWindow.cpp
         Source/PedalListComponent.cpp
+        Source/PedalCatalog.cpp
+        Source/PresetManager.cpp
+        Source/ModernLookAndFeel.cpp
         Source/ReverbPedal.cpp
         Source/NoiseGatePedal.cpp
         Source/TransientShaperPedal.cpp
         Source/CleanAmpPedal.cpp
         Source/Peavey5150Pedal.cpp
-        Source/FourByTwelveCabPedal.cpp
+        Source/CabinetPedal.cpp
         Source/CabImpulseResponse.cpp
         Source/KnobComponent.cpp
         Source/PitchDetector.cpp
@@ -35,11 +39,38 @@ target_sources(CSim
         Source/ToneStackPedal.cpp
         Source/PowerAmpPedal.cpp
         Source/DiodeClipperPedal.cpp
+        Source/SpringReverbPedal.cpp
+        Source/BiasTremoloPedal.cpp
+        Source/DynamicGainStagePedal.cpp
+        Source/GraphicEQPedal.cpp
+        Source/DoubleGuitarPedal.cpp
+        Source/TransposePedal.cpp
+        Source/PrecisionDrivePedal.cpp
+        Source/DistortionPedal.cpp
+        Source/MesaRectifierPreampPedal.cpp
+        Source/FortinMeshuggahPreampPedal.cpp
+        Source/PalmMuteTamerPedal.cpp
+        Source/DiezelVH4PreampPedal.cpp
+        Source/MesaDiezelHybridPreampPedal.cpp
         Source/dsp/KorenTriodeStage.cpp
         Source/dsp/Oversampler4x.cpp
         Source/dsp/FenderToneStack.cpp
         Source/dsp/PowerAmpStage.cpp
         Source/dsp/DiodeClipperStage.cpp
+        Source/dsp/NoiseGate.cpp
+        Source/dsp/SpringReverb.cpp
+        Source/dsp/BiasModulatedTremolo.cpp
+        Source/dsp/DynamicGainStage.cpp
+        Source/dsp/GraphicEQ.cpp
+        Source/dsp/Doubler.cpp
+        Source/dsp/PitchShifter.cpp
+        Source/dsp/PrecisionDriveStage.cpp
+        Source/dsp/MesaRectifierPreamp.cpp
+        Source/dsp/SolidStatePowerAmpStage.cpp
+        Source/dsp/FortinMeshuggahPreamp.cpp
+        Source/dsp/PalmMuteTamer.cpp
+        Source/dsp/DiezelVH4Preamp.cpp
+        Source/dsp/MesaDiezelHybridPreamp.cpp
 )
 
 target_compile_definitions(CSim
@@ -169,3 +200,77 @@ add_executable(MetalAmpFullChainTest
     Source/dsp/PowerAmpStage.cpp
 )
 target_include_directories(MetalAmpFullChainTest PRIVATE Source/dsp)
+
+add_executable(GraphicEQTest
+    Tests/GraphicEQTest.cpp
+    Source/dsp/GraphicEQ.cpp
+)
+target_include_directories(GraphicEQTest PRIVATE Source/dsp)
+
+add_executable(DoublerTest
+    Tests/DoublerTest.cpp
+    Source/dsp/Doubler.cpp
+)
+target_include_directories(DoublerTest PRIVATE Source/dsp)
+
+add_executable(PitchShifterTest
+    Tests/PitchShifterTest.cpp
+    Source/dsp/PitchShifter.cpp
+)
+target_include_directories(PitchShifterTest PRIVATE Source/dsp)
+
+add_executable(PrecisionDriveStageTest
+    Tests/PrecisionDriveStageTest.cpp
+    Source/dsp/PrecisionDriveStage.cpp
+    Source/dsp/Oversampler4x.cpp
+)
+target_include_directories(PrecisionDriveStageTest PRIVATE Source/dsp)
+
+add_executable(MesaRectifierPreampTest
+    Tests/MesaRectifierPreampTest.cpp
+    Source/dsp/MesaRectifierPreamp.cpp
+    Source/dsp/KorenTriodeStage.cpp
+    Source/dsp/Oversampler4x.cpp
+)
+target_include_directories(MesaRectifierPreampTest PRIVATE Source/dsp)
+
+add_executable(SolidStatePowerAmpStageTest
+    Tests/SolidStatePowerAmpStageTest.cpp
+    Source/dsp/SolidStatePowerAmpStage.cpp
+    Source/dsp/Oversampler4x.cpp
+)
+target_include_directories(SolidStatePowerAmpStageTest PRIVATE Source/dsp)
+
+add_executable(FortinMeshuggahPreampTest
+    Tests/FortinMeshuggahPreampTest.cpp
+    Source/dsp/FortinMeshuggahPreamp.cpp
+    Source/dsp/MesaRectifierPreamp.cpp
+    Source/dsp/KorenTriodeStage.cpp
+    Source/dsp/DiodeClipperStage.cpp
+    Source/dsp/Oversampler4x.cpp
+)
+target_include_directories(FortinMeshuggahPreampTest PRIVATE Source/dsp)
+
+add_executable(PalmMuteTamerTest
+    Tests/PalmMuteTamerTest.cpp
+    Source/dsp/PalmMuteTamer.cpp
+)
+target_include_directories(PalmMuteTamerTest PRIVATE Source/dsp)
+
+add_executable(DiezelVH4PreampTest
+    Tests/DiezelVH4PreampTest.cpp
+    Source/dsp/DiezelVH4Preamp.cpp
+    Source/dsp/MesaRectifierPreamp.cpp
+    Source/dsp/KorenTriodeStage.cpp
+    Source/dsp/Oversampler4x.cpp
+)
+target_include_directories(DiezelVH4PreampTest PRIVATE Source/dsp)
+
+add_executable(MesaDiezelHybridPreampTest
+    Tests/MesaDiezelHybridPreampTest.cpp
+    Source/dsp/MesaDiezelHybridPreamp.cpp
+    Source/dsp/DiezelVH4Preamp.cpp
+    Source/dsp/KorenTriodeStage.cpp
+    Source/dsp/Oversampler4x.cpp
+)
+target_include_directories(MesaDiezelHybridPreampTest PRIVATE Source/dsp)

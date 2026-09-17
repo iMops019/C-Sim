@@ -48,6 +48,11 @@ void PowerAmpStage::setFeedback(float amount)
     feedbackAmount = std::clamp(amount, 0.0f, 1.0f);
 }
 
+void PowerAmpStage::setDrive(float amount)
+{
+    driveAmount = std::clamp(amount, 0.0f, 1.0f);
+}
+
 void PowerAmpStage::reset()
 {
     sagEnvelope = 0.0;
@@ -65,7 +70,8 @@ float PowerAmpStage::processOversampledSample(float x) noexcept
     // One-sample delayed to avoid an algebraic loop; inaudible at audio
     // sample rates (and now an even shorter delay in oversampled-sample
     // terms, so tighter still).
-    float stageInput = x + previousOutput * feedbackAmount;
+    auto driveGain = 1.0f + driveAmount * driveRange; // 1x to 6x
+    float stageInput = x * driveGain + previousOutput * feedbackAmount;
 
     // Sag: a smoothed envelope of the stage's own demand droops the
     // effective B+ rail, recovering over the release time.

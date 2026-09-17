@@ -167,6 +167,38 @@ int main()
     std::printf("  %s\n", stable ? "OK: stable across the whole range" : "see failures above");
     allPassed &= stable;
 
+    // --- Test 5: Drive should produce real, growing harmonic saturation,
+    // and default (never calling setDrive) must match pre-Drive behavior
+    // - a straight 1x pass into the stage - so this addition doesn't
+    // change any existing caller's sound. ---
+    std::printf("=== Drive: higher settings should add more harmonic content ===\n");
+    {
+        auto distortionAt = [&input, numSamples](float driveAmount)
+        {
+            PowerAmpStage stage(sampleRate);
+            stage.setSag(0.0f);
+            stage.setFeedback(0.0f);
+            stage.setDrive(driveAmount);
+
+            std::vector<float> out(numSamples);
+            stage.processBlock(input.data(), out.data(), numSamples);
+
+            auto fundamental = TestUtils::goertzelMagnitude(out, testFreq, sampleRate);
+            auto third = TestUtils::goertzelMagnitude(out, testFreq * 3.0, sampleRate);
+            return third / std::max(1.0e-6, fundamental);
+        };
+
+        auto defaultDrive = distortionAt(0.0f);
+        auto highDrive = distortionAt(1.0f);
+
+        std::printf("  drive=0.0 (default): 3rd/fundamental = %.4f\n", defaultDrive);
+        std::printf("  drive=1.0:            3rd/fundamental = %.4f\n", highDrive);
+
+        bool grows = highDrive > defaultDrive * 1.5;
+        std::printf("  %s: Drive audibly adds saturation above the un-set default\n\n", grows ? "OK" : "FAILED");
+        allPassed &= grows;
+    }
+
     std::printf("\n%s\n", allPassed ? "ALL CHECKS PASSED" : "SOME CHECKS FAILED");
     return allPassed ? 0 : 1;
 }

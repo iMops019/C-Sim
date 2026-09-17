@@ -1,59 +1,31 @@
 #include "MainComponent.h"
-#include "ReverbPedal.h"
-#include "NoiseGatePedal.h"
-#include "TransientShaperPedal.h"
-#include "CleanAmpPedal.h"
-#include "Peavey5150Pedal.h"
-#include "FourByTwelveCabPedal.h"
-#include "TriodeStagePedal.h"
-#include "ToneStackPedal.h"
-#include "PowerAmpPedal.h"
-#include "DiodeClipperPedal.h"
-
-namespace
-{
-    std::vector<PedalListComponent::CatalogItem> makePedalCatalog()
-    {
-        return { { "Reverb", [] { return std::make_unique<ReverbPedal>(); } },
-                 { "Noise Gate", [] { return std::make_unique<NoiseGatePedal>(); } },
-                 { "Transient Shaper", [] { return std::make_unique<TransientShaperPedal>(); } } };
-    }
-
-    std::vector<PedalListComponent::CatalogItem> makeAmpCatalog()
-    {
-        return { { "Drop Tuned Clean 1", [] { return std::make_unique<CleanAmpPedal>(); } },
-                 { "5150 Lead", [] { return std::make_unique<Peavey5150Pedal>(); } } };
-    }
-
-    std::vector<PedalListComponent::CatalogItem> makeCabCatalog()
-    {
-        return { { "4x12 V30", [] { return std::make_unique<FourByTwelveCabPedal>(); } } };
-    }
-
-    // Raw circuit-level building blocks - stack these yourself (Triode
-    // Stage, Tone Stack, Diode Clipper, Power Amp, in whatever order and
-    // however many you like) to build your own amp from scratch, rather
-    // than only using the fixed preset amps above.
-    std::vector<PedalListComponent::CatalogItem> makeLabCatalog()
-    {
-        return { { "Triode Stage", [] { return std::make_unique<TriodeStagePedal>(); } },
-                 { "Tone Stack", [] { return std::make_unique<ToneStackPedal>(); } },
-                 { "Diode Clipper", [] { return std::make_unique<DiodeClipperPedal>(); } },
-                 { "Power Amp", [] { return std::make_unique<PowerAmpPedal>(); } } };
-    }
-}
+#include "PedalCatalog.h"
+#include "PresetManager.h"
+#include "ModernLookAndFeel.h"
 
 MainComponent::MainComponent()
-    : pedalList(signalChain, makePedalCatalog()),
-      ampList(signalChain, makeAmpCatalog()),
-      cabList(signalChain, makeCabCatalog()),
-      labList(signalChain, makeLabCatalog())
+    : pedalList(signalChain, PedalCatalog::pedals()),
+      ampList(signalChain, PedalCatalog::amps()),
+      cabList(signalChain, PedalCatalog::cabs()),
+      labList(signalChain, PedalCatalog::lab())
 {
     addAndMakeVisible(settingsButton);
     settingsButton.onClick = [this] { openSettings(); };
 
     addAndMakeVisible(tunerButton);
     tunerButton.onClick = [this] { openTuner(); };
+
+    addAndMakeVisible(savePresetButton);
+    savePresetButton.onClick = [this] { openSavePresetDialog(); };
+    savePresetButton.setTooltip("Save the current chain as a named preset you can reload later.");
+
+    addAndMakeVisible(loadPresetButton);
+    loadPresetButton.onClick = [this] { openLoadPresetMenu(); };
+
+    addAndMakeVisible(saveSettingsButton);
+    saveSettingsButton.onClick = [this] { saveCurrentSettings(); };
+    saveSettingsButton.setTooltip("Remember this chain, audio device, and volume as the setup to "
+                                   "load automatically the next time the app starts.");
 
     addAndMakeVisible(statusLabel);
     statusLabel.setJustificationType(juce::Justification::topLeft);
@@ -75,21 +47,33 @@ MainComponent::MainComponent()
 
     addAndMakeVisible(signalChain);
 
-    tabs.addTab("Pedals", juce::Colours::darkgrey, &pedalList, false);
-    tabs.addTab("Amps", juce::Colours::darkgrey, &ampList, false);
-    tabs.addTab("Cabs", juce::Colours::darkgrey, &cabList, false);
-    tabs.addTab("Lab", juce::Colours::darkgrey, &labList, false);
+    tabs.addTab("Pedals", ModernColours::background, &pedalList, false);
+    tabs.addTab("Amps", ModernColours::background, &ampList, false);
+    tabs.addTab("Cabs", ModernColours::background, &cabList, false);
+    tabs.addTab("Lab", ModernColours::background, &labList, false);
     addAndMakeVisible(tabs);
 
-    setSize(800, 600);
+    setSize(1150, 680);
 
     // Open with 0 input channels so nothing is captured/played until the
     // user picks their interface in Settings; output stays on the system
     // default so the device selector has something initialised to show.
-    setAudioChannels(0, 2);
+    // If Save Settings was ever clicked, restore that saved device instead
+    // of falling back to the default - this has to happen before the
+    // chain/volume restore below, since opening the device is what first
+    // establishes a sample rate for pedals to prepare() against.
+    auto savedDeviceXml = PresetManager::loadSavedAudioDeviceState();
+    setAudioChannels(0, 2, savedDeviceXml.get());
 
     deviceManager.addChangeListener(this);
     updateStatusLabel();
+
+    float savedMasterVolume = 100.0f;
+    if (PresetManager::loadSavedChainAndVolume(signalChain, savedMasterVolume))
+    {
+        masterVolumeSlider.setValue(savedMasterVolume, juce::dontSendNotification);
+        masterVolumeGain.store(savedMasterVolume / 100.0f, std::memory_order_relaxed);
+    }
 }
 
 MainComponent::~MainComponent()
@@ -186,8 +170,14 @@ void MainComponent::resized()
     topBar.removeFromRight(8);
     tunerButton.setBounds(topBar.removeFromRight(80).removeFromTop(28));
     topBar.removeFromRight(10);
+    saveSettingsButton.setBounds(topBar.removeFromRight(100).removeFromTop(28));
+    topBar.removeFromRight(8);
+    loadPresetButton.setBounds(topBar.removeFromRight(100).removeFromTop(28));
+    topBar.removeFromRight(8);
+    savePresetButton.setBounds(topBar.removeFromRight(100).removeFromTop(28));
+    topBar.removeFromRight(10);
 
-    auto volumeArea = topBar.removeFromRight(220);
+    auto volumeArea = topBar.removeFromRight(200);
     masterVolumeLabel.setBounds(volumeArea.removeFromTop(16));
     masterVolumeSlider.setBounds(volumeArea.removeFromTop(24));
 
@@ -195,11 +185,16 @@ void MainComponent::resized()
 
     area.removeFromTop(10);
 
-    auto tabsArea = area.removeFromBottom(200);
-    tabs.setBounds(tabsArea);
+    // The rack lives in the top-right, sized like a real stage rack
+    // column rather than stretched full-width - the pedal/amp/cab/lab
+    // catalogs take the rest of the space on the left so browsing and
+    // the rack are side by side instead of stacked.
+    constexpr int rackWidth = 400;
+    auto rackArea = area.removeFromRight(juce::jmin(rackWidth, area.getWidth()));
+    area.removeFromRight(10);
 
-    area.removeFromBottom(10);
-    signalChain.setBounds(area);
+    tabs.setBounds(area);
+    signalChain.setBounds(rackArea);
 }
 
 void MainComponent::openSettings()
@@ -222,6 +217,52 @@ void MainComponent::openTuner()
     }
 
     tunerWindow = std::make_unique<TunerWindow>(tunerEngine, [this] { tunerWindow = nullptr; });
+}
+
+void MainComponent::openSavePresetDialog()
+{
+    auto* alertWindow = new juce::AlertWindow("Save Preset", "Enter a name for this preset:", juce::AlertWindow::NoIcon);
+    alertWindow->addTextEditor("name", "My Preset");
+    alertWindow->addButton("Save", 1, juce::KeyPress(juce::KeyPress::returnKey));
+    alertWindow->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
+
+    alertWindow->enterModalState(true, juce::ModalCallbackFunction::create([this, alertWindow](int result)
+    {
+        if (result == 1)
+        {
+            auto name = alertWindow->getTextEditorContents("name").trim();
+            if (name.isNotEmpty())
+                PresetManager::savePreset(signalChain, name);
+        }
+    }), true);
+}
+
+void MainComponent::openLoadPresetMenu()
+{
+    auto names = PresetManager::listPresetNames();
+
+    juce::PopupMenu menu;
+    if (names.isEmpty())
+        menu.addItem(1, "No presets saved yet", false);
+    else
+        for (int i = 0; i < names.size(); ++i)
+            menu.addItem(i + 1, names[i]);
+
+    menu.showMenuAsync(juce::PopupMenu::Options().withTargetComponent(loadPresetButton),
+                        [this, names](int chosenId)
+    {
+        if (chosenId >= 1 && chosenId <= names.size())
+            PresetManager::loadPreset(signalChain, names[chosenId - 1]);
+    });
+}
+
+void MainComponent::saveCurrentSettings()
+{
+    PresetManager::saveCurrentSettings(signalChain, deviceManager, (float) masterVolumeSlider.getValue());
+
+    juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::InfoIcon, "Settings Saved",
+                                            "This chain, audio device, and volume will now load automatically "
+                                            "the next time the app starts.");
 }
 
 void MainComponent::updateStatusLabel()

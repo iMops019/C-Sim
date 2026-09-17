@@ -1,5 +1,7 @@
 #include "KnobComponent.h"
 
+#include <cmath>
+
 KnobComponent::KnobComponent(PedalParameter& parameterToControl)
     : parameter(parameterToControl)
 {
@@ -10,12 +12,25 @@ KnobComponent::KnobComponent(PedalParameter& parameterToControl)
     slider.setValue(parameter.get(), juce::dontSendNotification);
     slider.setDoubleClickReturnValue(true, parameter.defaultValue);
     slider.onValueChange = [this] { parameter.set((float) slider.getValue()); };
+
+    if (! parameter.valueLabels.empty())
+    {
+        slider.textFromValueFunction = [this](double v)
+        {
+            auto index = juce::jlimit(0, (int) parameter.valueLabels.size() - 1, (int) std::round(v));
+            return parameter.valueLabels[(size_t) index];
+        };
+        slider.setValue(parameter.get(), juce::dontSendNotification); // refresh text box with the new formatter
+    }
+
     addAndMakeVisible(slider);
 
     label.setText(parameter.name, juce::dontSendNotification);
     label.setJustificationType(juce::Justification::centred);
     label.setFont(juce::Font(12.0f));
     addAndMakeVisible(label);
+
+    startTimerHz(15); // cheap enough to not matter, fast enough to feel instant
 }
 
 void KnobComponent::resized()
@@ -23,4 +38,14 @@ void KnobComponent::resized()
     auto area = getLocalBounds();
     label.setBounds(area.removeFromTop(14));
     slider.setBounds(area);
+}
+
+void KnobComponent::timerCallback()
+{
+    if (slider.isMouseButtonDown())
+        return; // don't fight the user's own drag
+
+    auto current = parameter.get();
+    if (std::abs(current - (float) slider.getValue()) > 0.0001f)
+        slider.setValue(current, juce::dontSendNotification);
 }

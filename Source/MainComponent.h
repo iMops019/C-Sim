@@ -28,11 +28,17 @@ public:
 private:
     void openSettings();
     void openTuner();
+    void openSavePresetDialog();
+    void openLoadPresetMenu();
+    void saveCurrentSettings();
     void updateStatusLabel();
     void changeListenerCallback(juce::ChangeBroadcaster* source) override;
 
     juce::TextButton settingsButton{"Settings"};
     juce::TextButton tunerButton{"Tuner"};
+    juce::TextButton savePresetButton{"Save Preset..."};
+    juce::TextButton loadPresetButton{"Load Preset..."};
+    juce::TextButton saveSettingsButton{"Save Settings"};
     juce::Label statusLabel;
     std::unique_ptr<SettingsWindow> settingsWindow;
 

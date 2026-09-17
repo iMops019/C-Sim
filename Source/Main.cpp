@@ -1,6 +1,7 @@
 #include <juce_gui_extra/juce_gui_extra.h>
 
 #include "MainComponent.h"
+#include "ModernLookAndFeel.h"
 
 class CSimApplication : public juce::JUCEApplication
 {
@@ -13,12 +14,14 @@ public:
 
     void initialise(const juce::String&) override
     {
+        juce::LookAndFeel::setDefaultLookAndFeel(&lookAndFeel);
         mainWindow = std::make_unique<MainWindow>(getApplicationName());
     }
 
     void shutdown() override
     {
         mainWindow = nullptr;
+        juce::LookAndFeel::setDefaultLookAndFeel(nullptr);
     }
 
     void systemRequestedQuit() override
@@ -52,6 +55,7 @@ public:
     };
 
 private:
+    ModernLookAndFeel lookAndFeel;
     std::unique_ptr<MainWindow> mainWindow;
 };
 

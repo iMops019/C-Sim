@@ -23,14 +23,18 @@ public:
     PedalListComponent(SignalChainComponent& signalChainToUse, std::vector<CatalogItem> catalogToShow);
     ~PedalListComponent() override;
 
-    void paint(juce::Graphics& g) override;
     void resized() override;
 
 private:
     class CatalogEntry;
+    class Content;
 
     SignalChainComponent& signalChain;
-    juce::OwnedArray<CatalogEntry> entries;
+
+    // Declared in this order so viewport (destroyed first, in reverse
+    // declaration order) never outlives the component it's viewing.
+    std::unique_ptr<Content> content;
+    juce::Viewport viewport;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PedalListComponent)
 };

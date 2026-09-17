@@ -105,19 +105,24 @@ float Peavey5150Pedal::processSample(float x, int channel)
 
     stage1 = interStageHighPass[channel].processSingleSampleRaw(stage1);
 
-    // Stage 2: fixed moderate drive, adds compression/sustain on top.
-    auto stage2 = asymmetricSaturate(stage1, 3.0f, 0.1f);
-
-    // Power-amp sag: gain droops as the post-distortion envelope rises,
-    // recovering over the Sag-controlled release time - the "give" a real
-    // tube power supply has under heavy drive, rather than static gain.
-    auto rectified = std::abs(stage2);
+    // Power-amp sag: track how hard stage 2 is about to be hit (feed-
+    // forward from stage 1's already-computed output, so no one-sample
+    // delay is needed the way a true feedback loop would require), then
+    // shift stage 2's OWN bias point by that envelope instead of just
+    // ducking the output's volume afterward. A higher bias pushes the
+    // tanh curve further from center - both compressing harder and
+    // adding more even-harmonic asymmetry as the "rail" sags - which is
+    // the actual squishy, breaking-up character real tube sag has under
+    // a hard pick attack, not just a quieter signal.
+    auto rectified = std::abs(stage1);
     auto sagCoeff = rectified > sagEnvelope[channel] ? sagAttackCoeff : sagReleaseCoeff;
     sagEnvelope[channel] += sagCoeff * (rectified - sagEnvelope[channel]);
 
     auto sagAmount = sag.get() / 100.0f;
-    auto sagGainReduction = 1.0f / (1.0f + sagAmount * sagEnvelope[channel] * 1.5f);
-    stage2 *= sagGainReduction;
+    auto dynamicBias = 0.1f + sagAmount * sagEnvelope[channel] * 0.6f;
+
+    // Stage 2: fixed moderate drive, adds compression/sustain on top.
+    auto stage2 = asymmetricSaturate(stage1, 3.0f, dynamicBias);
 
     // Cascaded tanh stages get loud fast - bring it back down before the
     // tone stack, roughly compensating for the gain knob's own boost.
