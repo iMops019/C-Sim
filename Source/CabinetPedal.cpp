@@ -273,7 +273,7 @@ std::vector<PedalParameter*> CabinetPedal::getParameters()
 
 std::unique_ptr<juce::Component> CabinetPedal::createCustomEditor()
 {
-    return std::make_unique<CabinetVisualEditor>(cab, micTypeA, micPositionA, micTypeB, micPositionB);
+    return std::make_unique<CabinetVisualEditor>(*this, cab, micTypeA, micPositionA, micTypeB, micPositionB, micBlend);
 }
 
 std::vector<PedalParameter*> CabinetPedal::getCustomEditorHandledParameters()

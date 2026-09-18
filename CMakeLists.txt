@@ -26,8 +26,6 @@ target_sources(CSim
         Source/ReverbPedal.cpp
         Source/NoiseGatePedal.cpp
         Source/TransientShaperPedal.cpp
-        Source/CleanAmpPedal.cpp
-        Source/Peavey5150Pedal.cpp
         Source/CabinetPedal.cpp
         Source/CabImpulseResponse.cpp
         Source/CabinetVisualEditor.cpp
@@ -48,16 +46,9 @@ target_sources(CSim
         Source/TransposePedal.cpp
         Source/PrecisionDrivePedal.cpp
         Source/DistortionPedal.cpp
-        Source/MesaRectifierPreampPedal.cpp
-        Source/FortinMeshuggahPreampPedal.cpp
         Source/PalmMuteTamerPedal.cpp
-        Source/DiezelVH4PreampPedal.cpp
-        Source/MesaDiezelHybridPreampPedal.cpp
-        Source/FenderTwinReverbPreampPedal.cpp
-        Source/FenderPrincetonReverbPreampPedal.cpp
-        Source/FenderDeluxeReverbPreampPedal.cpp
-        Source/FenderHybridReverbPreampPedal.cpp
         Source/FenderStyleAmpPedal.cpp
+        Source/MesaTripleRectifierPedal.cpp
         Source/MorningGloryPedal.cpp
         Source/DynaCompPedal.cpp
         Source/WardenPedal.cpp
@@ -75,17 +66,10 @@ target_sources(CSim
         Source/dsp/Doubler.cpp
         Source/dsp/PitchShifter.cpp
         Source/dsp/PrecisionDriveStage.cpp
-        Source/dsp/MesaRectifierPreamp.cpp
         Source/dsp/SolidStatePowerAmpStage.cpp
-        Source/dsp/FortinMeshuggahPreamp.cpp
         Source/dsp/PalmMuteTamer.cpp
-        Source/dsp/DiezelVH4Preamp.cpp
-        Source/dsp/MesaDiezelHybridPreamp.cpp
-        Source/dsp/FenderTwinReverbPreamp.cpp
-        Source/dsp/FenderPrincetonReverbPreamp.cpp
-        Source/dsp/FenderDeluxeReverbPreamp.cpp
-        Source/dsp/FenderHybridReverbPreamp.cpp
         Source/dsp/FenderStyleAmp.cpp
+        Source/dsp/MesaTripleRectifierAmp.cpp
         Source/dsp/BassmanToneStack.cpp
         Source/dsp/MorningGloryStage.cpp
         Source/dsp/DynaCompStage.cpp
@@ -247,14 +231,6 @@ add_executable(PrecisionDriveStageTest
 )
 target_include_directories(PrecisionDriveStageTest PRIVATE Source/dsp)
 
-add_executable(MesaRectifierPreampTest
-    Tests/MesaRectifierPreampTest.cpp
-    Source/dsp/MesaRectifierPreamp.cpp
-    Source/dsp/KorenTriodeStage.cpp
-    Source/dsp/Oversampler4x.cpp
-)
-target_include_directories(MesaRectifierPreampTest PRIVATE Source/dsp)
-
 add_executable(SolidStatePowerAmpStageTest
     Tests/SolidStatePowerAmpStageTest.cpp
     Source/dsp/SolidStatePowerAmpStage.cpp
@@ -262,66 +238,11 @@ add_executable(SolidStatePowerAmpStageTest
 )
 target_include_directories(SolidStatePowerAmpStageTest PRIVATE Source/dsp)
 
-add_executable(FortinMeshuggahPreampTest
-    Tests/FortinMeshuggahPreampTest.cpp
-    Source/dsp/FortinMeshuggahPreamp.cpp
-    Source/dsp/MesaRectifierPreamp.cpp
-    Source/dsp/KorenTriodeStage.cpp
-    Source/dsp/DiodeClipperStage.cpp
-    Source/dsp/Oversampler4x.cpp
-)
-target_include_directories(FortinMeshuggahPreampTest PRIVATE Source/dsp)
-
 add_executable(PalmMuteTamerTest
     Tests/PalmMuteTamerTest.cpp
     Source/dsp/PalmMuteTamer.cpp
 )
 target_include_directories(PalmMuteTamerTest PRIVATE Source/dsp)
-
-add_executable(DiezelVH4PreampTest
-    Tests/DiezelVH4PreampTest.cpp
-    Source/dsp/DiezelVH4Preamp.cpp
-    Source/dsp/MesaRectifierPreamp.cpp
-    Source/dsp/KorenTriodeStage.cpp
-    Source/dsp/Oversampler4x.cpp
-)
-target_include_directories(DiezelVH4PreampTest PRIVATE Source/dsp)
-
-add_executable(FenderTwinReverbPreampTest
-    Tests/FenderTwinReverbPreampTest.cpp
-    Source/dsp/FenderTwinReverbPreamp.cpp
-    Source/dsp/MesaRectifierPreamp.cpp
-    Source/dsp/KorenTriodeStage.cpp
-    Source/dsp/Oversampler4x.cpp
-)
-target_include_directories(FenderTwinReverbPreampTest PRIVATE Source/dsp)
-
-add_executable(FenderPrincetonReverbPreampTest
-    Tests/FenderPrincetonReverbPreampTest.cpp
-    Source/dsp/FenderPrincetonReverbPreamp.cpp
-    Source/dsp/FenderTwinReverbPreamp.cpp
-    Source/dsp/KorenTriodeStage.cpp
-    Source/dsp/Oversampler4x.cpp
-)
-target_include_directories(FenderPrincetonReverbPreampTest PRIVATE Source/dsp)
-
-add_executable(FenderDeluxeReverbPreampTest
-    Tests/FenderDeluxeReverbPreampTest.cpp
-    Source/dsp/FenderDeluxeReverbPreamp.cpp
-    Source/dsp/FenderPrincetonReverbPreamp.cpp
-    Source/dsp/FenderTwinReverbPreamp.cpp
-    Source/dsp/KorenTriodeStage.cpp
-    Source/dsp/Oversampler4x.cpp
-)
-target_include_directories(FenderDeluxeReverbPreampTest PRIVATE Source/dsp)
-
-add_executable(FenderHybridReverbPreampTest
-    Tests/FenderHybridReverbPreampTest.cpp
-    Source/dsp/FenderHybridReverbPreamp.cpp
-    Source/dsp/KorenTriodeStage.cpp
-    Source/dsp/Oversampler4x.cpp
-)
-target_include_directories(FenderHybridReverbPreampTest PRIVATE Source/dsp)
 
 add_executable(MorningGloryStageTest
     Tests/MorningGloryStageTest.cpp
@@ -342,15 +263,6 @@ add_executable(WardenStageTest
 )
 target_include_directories(WardenStageTest PRIVATE Source/dsp)
 
-add_executable(MesaDiezelHybridPreampTest
-    Tests/MesaDiezelHybridPreampTest.cpp
-    Source/dsp/MesaDiezelHybridPreamp.cpp
-    Source/dsp/DiezelVH4Preamp.cpp
-    Source/dsp/KorenTriodeStage.cpp
-    Source/dsp/Oversampler4x.cpp
-)
-target_include_directories(MesaDiezelHybridPreampTest PRIVATE Source/dsp)
-
 add_executable(FenderStyleAmpTest
     Tests/FenderStyleAmpTest.cpp
     Source/dsp/FenderStyleAmp.cpp
@@ -358,6 +270,15 @@ add_executable(FenderStyleAmpTest
     Source/dsp/Oversampler4x.cpp
 )
 target_include_directories(FenderStyleAmpTest PRIVATE Source/dsp)
+
+add_executable(MesaTripleRectifierAmpTest
+    Tests/MesaTripleRectifierAmpTest.cpp
+    Source/dsp/MesaTripleRectifierAmp.cpp
+    Source/dsp/KorenTriodeStage.cpp
+    Source/dsp/Oversampler4x.cpp
+    Source/dsp/DiodeClipperStage.cpp
+)
+target_include_directories(MesaTripleRectifierAmpTest PRIVATE Source/dsp)
 
 add_executable(BassmanToneStackTest
     Tests/BassmanToneStackTest.cpp

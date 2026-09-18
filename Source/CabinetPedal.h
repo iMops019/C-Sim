@@ -45,6 +45,15 @@ public:
     std::unique_ptr<juce::Component> createCustomEditor() override;
     std::vector<PedalParameter*> getCustomEditorHandledParameters() override;
 
+    // Exposed for CabinetVisualEditor, so it can show the user WHY moving
+    // a mic marker might not do anything (Mic B while Mic Blend reads
+    // near 0%) or warn that dragging Mic A will discard the loaded file
+    // (touching Mic A's Type/Position always resynthesizes it - see
+    // reloadMicIRIfNeeded) - neither of which was visible in the UI at
+    // all before, which is exactly what made this feel broken rather
+    // than just quiet.
+    bool isUsingLoadedIR() const noexcept { return usingLoadedIR; }
+
 private:
     static constexpr int maxChannels = 2;
 

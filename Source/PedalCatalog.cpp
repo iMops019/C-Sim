@@ -3,8 +3,6 @@
 #include "ReverbPedal.h"
 #include "NoiseGatePedal.h"
 #include "TransientShaperPedal.h"
-#include "CleanAmpPedal.h"
-#include "Peavey5150Pedal.h"
 #include "CabinetPedal.h"
 #include "TriodeStagePedal.h"
 #include "ToneStackPedal.h"
@@ -23,15 +21,8 @@
 #include "DynaCompPedal.h"
 #include "WardenPedal.h"
 #include "FuzzChorusPedal.h"
-#include "MesaRectifierPreampPedal.h"
-#include "FortinMeshuggahPreampPedal.h"
-#include "DiezelVH4PreampPedal.h"
-#include "MesaDiezelHybridPreampPedal.h"
-#include "FenderTwinReverbPreampPedal.h"
-#include "FenderPrincetonReverbPreampPedal.h"
-#include "FenderDeluxeReverbPreampPedal.h"
-#include "FenderHybridReverbPreampPedal.h"
 #include "FenderStyleAmpPedal.h"
+#include "MesaTripleRectifierPedal.h"
 
 namespace PedalCatalog
 {
@@ -54,17 +45,8 @@ namespace PedalCatalog
 
     std::vector<PedalListComponent::CatalogItem> amps()
     {
-        return { { "Drop Tuned Clean 1", [] { return std::make_unique<CleanAmpPedal>(); } },
-                 { "5150 Lead", [] { return std::make_unique<Peavey5150Pedal>(); } },
-                 { "Mesa Rectifier Preamp", [] { return std::make_unique<MesaRectifierPreampPedal>(); } },
-                 { "Fortin Meshuggah Preamp", [] { return std::make_unique<FortinMeshuggahPreampPedal>(); } },
-                 { "Diezel VH4 Preamp", [] { return std::make_unique<DiezelVH4PreampPedal>(); } },
-                 { "Mesa/Diezel Hybrid Preamp", [] { return std::make_unique<MesaDiezelHybridPreampPedal>(); } },
-                 { "Fender Twin Reverb Preamp", [] { return std::make_unique<FenderTwinReverbPreampPedal>(); } },
-                 { "Fender Princeton Reverb Preamp", [] { return std::make_unique<FenderPrincetonReverbPreampPedal>(); } },
-                 { "Fender Deluxe Reverb Preamp", [] { return std::make_unique<FenderDeluxeReverbPreampPedal>(); } },
-                 { "Fender Twin/Princeton Hybrid Preamp", [] { return std::make_unique<FenderHybridReverbPreampPedal>(); } },
-                 { "Fender Style Amp (WIP)", [] { return std::make_unique<FenderStyleAmpPedal>(); } } };
+        return { { "Fender Style Amp (WIP)", [] { return std::make_unique<FenderStyleAmpPedal>(); } },
+                 { "Mesa Triple Rectifier (WIP)", [] { return std::make_unique<MesaTripleRectifierPedal>(); } } };
     }
 
     std::vector<PedalListComponent::CatalogItem> cabs()

@@ -2,6 +2,7 @@
 
 #include <juce_gui_basics/juce_gui_basics.h>
 
+#include "CabinetPedal.h"
 #include "PedalParameter.h"
 
 // A drawn cabinet with draggable mic markers, replacing CabinetPedal's
@@ -26,13 +27,28 @@
 // first one in the cab's layout) since the model doesn't distinguish
 // between physical speakers spatially - only how close to that cone's
 // edge or centre the capsule is aimed.
+//
+// Real bug report this editor used to give zero feedback about ("I move
+// [the mics] around and I don't hear anything"): loading a real IR file
+// (CabinetPedal::loadImpulseResponseFile) resets Mic Blend to 0 by
+// design (so a real capture isn't heard comb-filtered against an
+// invented synthetic Mic B), which means Mic B's marker can be dragged
+// anywhere with zero audible effect until Mic Blend is raised again -
+// and touching Mic A's own marker/type SILENTLY discards the loaded file
+// and replaces it with a synthesized cab (Mic A's Type/Position always
+// resynthesizes - there's no way to "reposition" a mic on an already-
+// captured real IR, that position is physically baked in). Both are
+// real, by-design behavior, not bugs - but this editor used to show
+// neither state, so it just looked broken. Now shows an "IR loaded"
+// badge and dims/labels Mic B when Mic Blend is near 0.
 class CabinetVisualEditor : public juce::Component,
                              private juce::Timer
 {
 public:
-    CabinetVisualEditor(PedalParameter& cabParam,
+    CabinetVisualEditor(CabinetPedal& ownerPedal, PedalParameter& cabParam,
                          PedalParameter& micTypeAParam, PedalParameter& micPositionAParam,
-                         PedalParameter& micTypeBParam, PedalParameter& micPositionBParam);
+                         PedalParameter& micTypeBParam, PedalParameter& micPositionBParam,
+                         PedalParameter& micBlendParam);
 
     void paint(juce::Graphics& g) override;
     void resized() override;
@@ -66,16 +82,19 @@ private:
     juce::Point<float> markerPositionFor(float positionFraction, int side) const;
     float xToPositionFraction(float x) const;
 
+    CabinetPedal& pedal;
     PedalParameter& cab;
     PedalParameter& micTypeA;
     PedalParameter& micPositionA;
     PedalParameter& micTypeB;
     PedalParameter& micPositionB;
+    PedalParameter& micBlend;
 
     juce::OwnedArray<juce::TextButton> cabButtons;
     juce::TextButton micTypeAButton, micTypeBButton;
 
     juce::Rectangle<int> cabDrawArea;
+    juce::Rectangle<int> statusArea;
     int micASide = -1;
     int micBSide = 1;
 

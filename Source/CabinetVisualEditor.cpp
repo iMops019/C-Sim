@@ -13,11 +13,12 @@ namespace
     const juce::Colour micBColour { 0xfff5a623 }; // warm amber - distinct from A's teal and from the danger red used elsewhere
 }
 
-CabinetVisualEditor::CabinetVisualEditor(PedalParameter& cabParam,
+CabinetVisualEditor::CabinetVisualEditor(CabinetPedal& ownerPedal, PedalParameter& cabParam,
                                           PedalParameter& micTypeAParam, PedalParameter& micPositionAParam,
-                                          PedalParameter& micTypeBParam, PedalParameter& micPositionBParam)
-    : cab(cabParam), micTypeA(micTypeAParam), micPositionA(micPositionAParam),
-      micTypeB(micTypeBParam), micPositionB(micPositionBParam)
+                                          PedalParameter& micTypeBParam, PedalParameter& micPositionBParam,
+                                          PedalParameter& micBlendParam)
+    : pedal(ownerPedal), cab(cabParam), micTypeA(micTypeAParam), micPositionA(micPositionAParam),
+      micTypeB(micTypeBParam), micPositionB(micPositionBParam), micBlend(micBlendParam)
 {
     rebuildCabButtons();
 
@@ -40,7 +41,7 @@ CabinetVisualEditor::CabinetVisualEditor(PedalParameter& cabParam,
     micTypeAButton.setColour(juce::TextButton::textColourOffId, micAColour);
     micTypeBButton.setColour(juce::TextButton::textColourOffId, micBColour);
 
-    setSize(320, 260);
+    setSize(320, 278);
     startTimerHz(15);
 }
 
@@ -84,6 +85,12 @@ void CabinetVisualEditor::resized()
     fb.performLayout(buttonRows);
 
     area.removeFromTop(6);
+
+    // Reserved for the "IR loaded" status line - see paint(). Always
+    // reserved (even when not currently shown) so the layout doesn't
+    // jump around as the loaded-IR state changes.
+    statusArea = area.removeFromTop(16);
+    area.removeFromTop(4);
 
     auto micTypeRow = area.removeFromBottom(26);
     micTypeAButton.setBounds(micTypeRow.removeFromLeft(micTypeRow.getWidth() / 2).reduced(4, 0));
@@ -155,6 +162,28 @@ float CabinetVisualEditor::xToPositionFraction(float x) const
 
 void CabinetVisualEditor::paint(juce::Graphics& g)
 {
+    // Status line - see header comment for why this exists: neither of
+    // these states used to be visible anywhere in this editor.
+    auto usingLoadedIR = pedal.isUsingLoadedIR();
+    auto micBInactive = micBlend.get() < 1.0f; // Mic Blend reads ~0% - moving Mic B currently does nothing audible
+
+    if (usingLoadedIR)
+    {
+        g.setColour(ModernColours::accent);
+        g.setFont(juce::Font(12.0f, juce::Font::bold));
+        juce::String msg = "IR loaded - dragging Mic A replaces it";
+        if (micBInactive)
+            msg += "; Mic B inactive (Blend 0%)";
+        g.drawText(msg, statusArea.toFloat(), juce::Justification::centred);
+    }
+    else if (micBInactive)
+    {
+        g.setColour(ModernColours::textSecondary);
+        g.setFont(juce::Font(12.0f, juce::Font::plain));
+        g.drawText("Mic B inactive (Blend 0%) - raise Mic Blend to hear it",
+                   statusArea.toFloat(), juce::Justification::centred);
+    }
+
     auto area = cabDrawArea.toFloat();
 
     // Cab body - a simple dark carpeted-box look, distinct from the
@@ -179,11 +208,24 @@ void CabinetVisualEditor::paint(juce::Graphics& g)
     }
 
     // Mic markers, positioned from the live parameter values - drawn
-    // last so they sit on top of the cab/speaker artwork.
-    auto drawMic = [&g](juce::Point<float> pos, float yOffset, const juce::Colour& colour, const juce::String& label)
+    // last so they sit on top of the cab/speaker artwork. Dimmed to a
+    // flat outline when it currently has zero audible effect (Mic B
+    // while Mic Blend reads ~0%) - see the status line above and the
+    // header comment for why this matters.
+    auto drawMic = [&g](juce::Point<float> pos, float yOffset, const juce::Colour& colour, const juce::String& label, bool inactive)
     {
         auto centre = pos.translated(0.0f, yOffset);
         auto bounds = juce::Rectangle<float>(markerRadius * 2.0f, markerRadius * 2.0f).withCentre(centre);
+
+        if (inactive)
+        {
+            g.setColour(colour.withAlpha(0.35f));
+            g.drawEllipse(bounds, 1.5f);
+            g.setColour(colour.withAlpha(0.5f));
+            g.setFont(juce::Font(13.0f, juce::Font::bold));
+            g.drawText(label, bounds, juce::Justification::centred);
+            return;
+        }
 
         g.setColour(colour.withAlpha(0.25f));
         g.fillEllipse(bounds.expanded(4.0f));
@@ -196,8 +238,8 @@ void CabinetVisualEditor::paint(juce::Graphics& g)
 
     auto micAPos = markerPositionFor(micPositionA.get() / 100.0f, micASide);
     auto micBPos = markerPositionFor(micPositionB.get() / 100.0f, micBSide);
-    drawMic(micAPos, micAYOffset, micAColour, "A");
-    drawMic(micBPos, micBYOffset, micBColour, "B");
+    drawMic(micAPos, micAYOffset, micAColour, "A", false);
+    drawMic(micBPos, micBYOffset, micBColour, "B", micBInactive);
 }
 
 void CabinetVisualEditor::mouseDown(const juce::MouseEvent& e)
