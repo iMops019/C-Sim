@@ -1,8 +1,16 @@
 // Verify the seed FenderStyleAmp's two knobs actually do something real:
-// Gain drives the tube stage harder (measurably more 2nd-harmonic content,
-// since the Koren triode curve is asymmetric), Volume scales output level
-// linearly, and the stage stays stable across a guitar-range sweep at max
-// settings.
+// Gain drives the (now 2-stage) cascade harder - measurably more total
+// harmonic content - Volume scales output level linearly, and the stage
+// stays stable across a guitar-range sweep at max settings.
+//
+// Uses combined (2nd+3rd)/fundamental rather than 2nd harmonic alone:
+// with the real V1->V2 cascade (see FenderStyleAmp.h), a higher Gain
+// setting shifts weight from even- to odd-order harmonics as the second
+// stage's own saturation kicks in harder, so an isolated 2nd-harmonic
+// ratio is not a monotonic proxy for "more driven" any more - the same
+// "never compare differently-saturated nonlinear stages with a single
+// harmonic in isolation" lesson already learned from this project's
+// Fortin/Mesa and Diezel/Mesa comparisons.
 
 #include "../Source/dsp/FenderStyleAmp.h"
 #include "TestUtils.h"
@@ -20,12 +28,12 @@ int main()
 {
     bool allPassed = true;
 
-    // --- Test 1: Gain should measurably increase 2nd-harmonic content. ---
-    std::printf("=== Gain: higher Gain should add real 2nd-harmonic distortion ===\n");
+    // --- Test 1: Gain should measurably increase total harmonic content. ---
+    std::printf("=== Gain: higher Gain should add real harmonic distortion ===\n");
     {
         constexpr double freq = 220.0;
 
-        auto secondHarmonicRatio = [freq](float gainAmount)
+        auto harmonicRatio = [freq](float gainAmount)
         {
             FenderStyleAmp amp(sampleRate);
             amp.setGain(gainAmount);
@@ -37,16 +45,18 @@ int main()
             amp.processBlock(in.data(), out.data(), numSamples);
 
             auto fundamental = TestUtils::goertzelMagnitude(out, freq, sampleRate);
-            auto secondHarmonic = TestUtils::goertzelMagnitude(out, freq * 2.0, sampleRate);
-            return secondHarmonic / std::max(1.0e-9, fundamental);
+            auto h2 = TestUtils::goertzelMagnitude(out, freq * 2.0, sampleRate);
+            auto h3 = TestUtils::goertzelMagnitude(out, freq * 3.0, sampleRate);
+            return (h2 + h3) / std::max(1.0e-9, fundamental);
         };
 
-        auto lowGainRatio = secondHarmonicRatio(0.0f);
-        auto highGainRatio = secondHarmonicRatio(1.0f);
-        std::printf("  Gain=0: 2nd/1st = %.5f, Gain=1: 2nd/1st = %.5f\n", lowGainRatio, highGainRatio);
+        auto lowGainRatio = harmonicRatio(0.0f);
+        auto highGainRatio = harmonicRatio(1.0f);
+        std::printf("  Gain=0: harmonics/fundamental = %.5f, Gain=1: harmonics/fundamental = %.5f\n",
+                     lowGainRatio, highGainRatio);
 
         bool gainAddsDistortion = highGainRatio > lowGainRatio * 1.5;
-        std::printf("  %s: Gain measurably increases 2nd-harmonic content\n\n",
+        std::printf("  %s: Gain measurably increases harmonic content\n\n",
                      gainAddsDistortion ? "OK" : "FAILED");
         allPassed &= gainAddsDistortion;
     }

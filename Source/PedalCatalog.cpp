@@ -22,6 +22,7 @@
 #include "MorningGloryPedal.h"
 #include "DynaCompPedal.h"
 #include "WardenPedal.h"
+#include "FuzzChorusPedal.h"
 #include "MesaRectifierPreampPedal.h"
 #include "FortinMeshuggahPreampPedal.h"
 #include "DiezelVH4PreampPedal.h"
@@ -47,7 +48,8 @@ namespace PedalCatalog
                  { "Palm Mute Tamer", [] { return std::make_unique<PalmMuteTamerPedal>(); } },
                  { "Morning Glory", [] { return std::make_unique<MorningGloryPedal>(); } },
                  { "Dyna Comp", [] { return std::make_unique<DynaCompPedal>(); } },
-                 { "The Warden", [] { return std::make_unique<WardenPedal>(); } } };
+                 { "The Warden", [] { return std::make_unique<WardenPedal>(); } },
+                 { "Fuzz Chorus", [] { return std::make_unique<FuzzChorusPedal>(); } } };
     }
 
     std::vector<PedalListComponent::CatalogItem> amps()

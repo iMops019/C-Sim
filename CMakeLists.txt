@@ -61,6 +61,7 @@ target_sources(CSim
         Source/MorningGloryPedal.cpp
         Source/DynaCompPedal.cpp
         Source/WardenPedal.cpp
+        Source/FuzzChorusPedal.cpp
         Source/dsp/KorenTriodeStage.cpp
         Source/dsp/Oversampler4x.cpp
         Source/dsp/FenderToneStack.cpp
@@ -89,6 +90,8 @@ target_sources(CSim
         Source/dsp/MorningGloryStage.cpp
         Source/dsp/DynaCompStage.cpp
         Source/dsp/WardenStage.cpp
+        Source/dsp/FuzzFaceStage.cpp
+        Source/dsp/PillowChorusStage.cpp
 )
 
 target_compile_definitions(CSim
@@ -361,3 +364,16 @@ add_executable(BassmanToneStackTest
     Source/dsp/BassmanToneStack.cpp
 )
 target_include_directories(BassmanToneStackTest PRIVATE Source/dsp)
+
+add_executable(FuzzFaceStageTest
+    Tests/FuzzFaceStageTest.cpp
+    Source/dsp/FuzzFaceStage.cpp
+    Source/dsp/Oversampler4x.cpp
+)
+target_include_directories(FuzzFaceStageTest PRIVATE Source/dsp)
+
+add_executable(PillowChorusStageTest
+    Tests/PillowChorusStageTest.cpp
+    Source/dsp/PillowChorusStage.cpp
+)
+target_include_directories(PillowChorusStageTest PRIVATE Source/dsp)

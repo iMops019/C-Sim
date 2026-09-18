@@ -12,15 +12,17 @@
 #include <memory>
 #include <vector>
 
-// The seed of the user's own from-scratch, schematic-driven Fender-style
-// amp build (Amps tab): Gain and Volume confirm the signal path works end
-// to end, plus a real Bass/Mid/Treble tone stack (from the tweed Fender
-// Bassman 5F6-A, see dsp/BassmanToneStack.h) and a Hi-Treble switch
-// borrowed from a different sourced schematic (see below). Future
-// sessions grow this further (coupling caps, cathode bias, tube-type
-// swaps) one stage at a time - see dsp/FenderStyleAmp.h. Signal order
-// matches the real amp: preamp gain stage -> tone stack -> Hi-Treble ->
-// Volume -> power amp (Tight switch).
+// The user's own from-scratch, schematic-driven Fender-style amp build
+// (Amps tab): now a genuine 2-stage V1/V2 preamp cascade with a real,
+// sourced interstage coupling cap (see dsp/FenderStyleAmp.h - modeled
+// directly on the tweed Fender Bassman 5F6-A's own preamp topology),
+// feeding a real Bass/Mid/Treble tone stack (the same 5F6-A, see
+// dsp/BassmanToneStack.h) and a Hi-Treble switch borrowed from a
+// different sourced schematic (see below). Future sessions can keep
+// growing this further (more stages, a real bright/normal channel
+// blend, etc.) one piece at a time - see dsp/FenderStyleAmp.h. Signal
+// order matches the real amp: preamp cascade -> tone stack -> Hi-Treble
+// -> Volume -> power amp (Tight switch).
 //
 // Tight: real Fender Twin Reverb (AB763) amps have a genuinely tighter,
 // cleaner low end than smaller sagging tweed-era amps like the Bassman
