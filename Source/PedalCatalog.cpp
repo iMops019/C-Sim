@@ -25,6 +25,7 @@
 #include "FenderStyleAmpPedal.h"
 #include "MesaTripleRectifierPedal.h"
 #include "SuperSonic22Pedal.h"
+#include "MarshallPlexi1959Pedal.h"
 
 namespace PedalCatalog
 {
@@ -50,7 +51,8 @@ namespace PedalCatalog
     {
         return { { "Fender Style Amp (WIP)", [] { return std::make_unique<FenderStyleAmpPedal>(); } },
                  { "Mesa Triple Rectifier (WIP)", [] { return std::make_unique<MesaTripleRectifierPedal>(); } },
-                 { "Fender Super-Sonic 22", [] { return std::make_unique<SuperSonic22Pedal>(); } } };
+                 { "Fender Super-Sonic 22", [] { return std::make_unique<SuperSonic22Pedal>(); } },
+                 { "Marshall 1959HW Plexi", [] { return std::make_unique<MarshallPlexi1959Pedal>(); } } };
     }
 
     std::vector<PedalListComponent::CatalogItem> cabs()

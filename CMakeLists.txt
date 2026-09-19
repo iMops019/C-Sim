@@ -51,6 +51,7 @@ target_sources(CSim
         Source/FenderStyleAmpPedal.cpp
         Source/MesaTripleRectifierPedal.cpp
         Source/SuperSonic22Pedal.cpp
+        Source/MarshallPlexi1959Pedal.cpp
         Source/MorningGloryPedal.cpp
         Source/DynaCompPedal.cpp
         Source/WardenPedal.cpp
@@ -75,6 +76,11 @@ target_sources(CSim
         Source/dsp/MesaTripleRectifierAmp.cpp
         Source/dsp/OrangeDualTerrorPreamp.cpp
         Source/dsp/SuperSonic22Preamp.cpp
+        Source/dsp/MarshallPlexi1959Amp.cpp
+        Source/dsp/MarshallPlexiPreamp.cpp
+        Source/dsp/MarshallPlexiPowerAmp.cpp
+        Source/dsp/MarshallToneStack.cpp
+        Source/dsp/PickupLoading.cpp
         Source/dsp/BassmanToneStack.cpp
         Source/dsp/MorningGloryStage.cpp
         Source/dsp/DynaCompStage.cpp
@@ -333,6 +339,56 @@ add_executable(SuperSonic22PreampTest
 )
 target_include_directories(SuperSonic22PreampTest PRIVATE Source/dsp)
 
+add_executable(KorenPentodeTest
+    Tests/KorenPentodeTest.cpp
+)
+target_include_directories(KorenPentodeTest PRIVATE Source/dsp)
+
+add_executable(OutputLoadTest
+    Tests/OutputLoadTest.cpp
+)
+target_include_directories(OutputLoadTest PRIVATE Source/dsp)
+
+add_executable(MarshallPlexiPowerAmpTest
+    Tests/MarshallPlexiPowerAmpTest.cpp
+    Source/dsp/MarshallPlexiPowerAmp.cpp
+    Source/dsp/MarshallToneStack.cpp
+)
+target_include_directories(MarshallPlexiPowerAmpTest PRIVATE Source/dsp)
+
+add_executable(PickupLoadingTest
+    Tests/PickupLoadingTest.cpp
+    Source/dsp/PickupLoading.cpp
+)
+target_include_directories(PickupLoadingTest PRIVATE Source/dsp)
+
+add_executable(MarshallPlexi1959AmpTest
+    Tests/MarshallPlexi1959AmpTest.cpp
+    Source/dsp/MarshallPlexi1959Amp.cpp
+    Source/dsp/MarshallPlexiPreamp.cpp
+    Source/dsp/MarshallPlexiPowerAmp.cpp
+    Source/dsp/MarshallToneStack.cpp
+    Source/dsp/PickupLoading.cpp
+    Source/dsp/KorenTriodeStage.cpp
+    Source/dsp/Oversampler4x.cpp
+)
+target_include_directories(MarshallPlexi1959AmpTest PRIVATE Source/dsp)
+
+add_executable(MarshallToneStackTest
+    Tests/MarshallToneStackTest.cpp
+    Source/dsp/MarshallToneStack.cpp
+)
+target_include_directories(MarshallToneStackTest PRIVATE Source/dsp)
+
+add_executable(MarshallPlexiPreampTest
+    Tests/MarshallPlexiPreampTest.cpp
+    Source/dsp/MarshallPlexiPreamp.cpp
+    Source/dsp/MarshallToneStack.cpp
+    Source/dsp/KorenTriodeStage.cpp
+    Source/dsp/Oversampler4x.cpp
+)
+target_include_directories(MarshallPlexiPreampTest PRIVATE Source/dsp)
+
 add_executable(DualCabMixTest
     Tests/DualCabMixTest.cpp
 )
@@ -511,6 +567,32 @@ target_compile_definitions(SuperSonic22PedalTest
         JUCE_USE_CURL=0
 )
 target_link_libraries(SuperSonic22PedalTest
+    PRIVATE
+        juce::juce_audio_utils
+        juce::juce_dsp
+    PUBLIC
+        juce::juce_recommended_config_flags
+)
+
+# Drives the REAL Marshall 1959HW pedal (JUCE-coupled): knob mapping, levels,
+# the speaker link, and stereo/block-size behaviour.
+add_executable(MarshallPlexi1959PedalTest
+    Tests/MarshallPlexi1959PedalTest.cpp
+    Source/MarshallPlexi1959Pedal.cpp
+    Source/dsp/MarshallPlexi1959Amp.cpp
+    Source/dsp/MarshallPlexiPreamp.cpp
+    Source/dsp/MarshallPlexiPowerAmp.cpp
+    Source/dsp/MarshallToneStack.cpp
+    Source/dsp/PickupLoading.cpp
+    Source/dsp/KorenTriodeStage.cpp
+    Source/dsp/Oversampler4x.cpp
+)
+target_compile_definitions(MarshallPlexi1959PedalTest
+    PRIVATE
+        JUCE_WEB_BROWSER=0
+        JUCE_USE_CURL=0
+)
+target_link_libraries(MarshallPlexi1959PedalTest
     PRIVATE
         juce::juce_audio_utils
         juce::juce_dsp
