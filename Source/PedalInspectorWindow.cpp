@@ -48,12 +48,22 @@ namespace
             };
             addAndMakeVisible(footswitch);
 
-            if (pedal.supportsImpulseResponseFile())
+            // One Load/Clear row per IR slot the pedal exposes (Cabinet has
+            // one per mic on each cab).
+            auto slotNames = pedal.getImpulseResponseSlotNames();
+            for (int slot = 0; slot < (int) slotNames.size(); ++slot)
             {
-                loadIRButton.setButtonText("Load IR...");
-                loadIRButton.onClick = [this] { openIRChooser(); };
-                addAndMakeVisible(loadIRButton);
+                auto* row = irRows.add(new IRRow());
+                row->label.setText(slotNames[(size_t) slot], juce::dontSendNotification);
+                row->label.setFont(juce::Font(juce::FontOptions(13.0f)));
+                row->loadButton.onClick = [this, slot] { openIRChooser(slot); };
+                row->clearButton.setButtonText("Clear");
+                row->clearButton.onClick = [this, slot] { pedal.clearImpulseResponse(slot); refreshIRRows(); };
+                addAndMakeVisible(row->label);
+                addAndMakeVisible(row->loadButton);
+                addAndMakeVisible(row->clearButton);
             }
+            refreshIRRows();
 
             removeButton.setButtonText("Remove from Rack");
             removeButton.setColour(juce::TextButton::buttonColourId, ModernColours::danger);
@@ -64,7 +74,7 @@ namespace
             // fixed-height area above the knob grid, and typically wants
             // a wider window than the plain knob grid does on its own.
             auto width = 340;
-            auto height = 412;
+            auto height = 412 + irRows.size() * irRowHeight;
             if (customEditor != nullptr)
             {
                 width = juce::jmax(width, customEditor->getWidth() + 24);
@@ -85,10 +95,17 @@ namespace
             removeButton.setBounds(removeArea.reduced(60, 0));
             area.removeFromBottom(8);
 
-            if (pedal.supportsImpulseResponseFile())
+            if (irRows.size() > 0)
             {
-                auto irArea = area.removeFromBottom(28);
-                loadIRButton.setBounds(irArea.reduced(30, 0));
+                for (int i = irRows.size() - 1; i >= 0; --i)
+                {
+                    auto rowArea = area.removeFromBottom(irRowHeight).reduced(0, 2);
+                    auto* row = irRows[i];
+                    row->label.setBounds(rowArea.removeFromLeft(88));
+                    row->clearButton.setBounds(rowArea.removeFromRight(52));
+                    rowArea.removeFromRight(4);
+                    row->loadButton.setBounds(rowArea);
+                }
                 area.removeFromBottom(8);
             }
 
@@ -132,23 +149,45 @@ namespace
             fb.performLayout(knobArea.getLocalBounds());
         }
 
-        void openIRChooser()
+        void openIRChooser(int slot)
         {
             fileChooser = std::make_unique<juce::FileChooser>(
-                "Select a cabinet impulse response (.wav)", juce::File(), "*.wav;*.aif;*.aiff");
+                "Select an impulse response (.wav) for " + pedal.getImpulseResponseSlotNames()[(size_t) slot],
+                juce::File(), "*.wav;*.aif;*.aiff");
 
             auto chooserFlags = juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles;
 
-            fileChooser->launchAsync(chooserFlags, [this](const juce::FileChooser& chooser)
+            fileChooser->launchAsync(chooserFlags, [this, slot](const juce::FileChooser& chooser)
             {
                 auto file = chooser.getResult();
                 if (file.existsAsFile())
-                    pedal.loadImpulseResponseFile(file);
+                    pedal.loadImpulseResponseFile(slot, file);
+                refreshIRRows();
             });
         }
 
+        // Shows each slot's loaded file name (or "Load..." if it's using
+        // the built-in IR), and only lets you Clear a slot that has one.
+        void refreshIRRows()
+        {
+            for (int slot = 0; slot < irRows.size(); ++slot)
+            {
+                auto name = pedal.getImpulseResponseFileName(slot);
+                irRows[slot]->loadButton.setButtonText(name.isEmpty() ? juce::String("Load...") : name);
+                irRows[slot]->clearButton.setEnabled(name.isNotEmpty());
+            }
+        }
+
+        struct IRRow
+        {
+            juce::Label label;
+            juce::TextButton loadButton, clearButton;
+        };
+        static constexpr int irRowHeight = 30;
+
         Pedal& pedal;
-        juce::TextButton footswitch, loadIRButton, removeButton;
+        juce::OwnedArray<IRRow> irRows;
+        juce::TextButton footswitch, removeButton;
         std::unique_ptr<juce::FileChooser> fileChooser;
         std::unique_ptr<juce::Component> customEditor;
 

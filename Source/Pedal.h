@@ -26,10 +26,25 @@ public:
     // Empty by default - override if the pedal has any.
     virtual std::vector<PedalParameter*> getParameters() { return {}; }
 
-    // Override for pedals that can load a user-supplied file (e.g. a cab
-    // that can load a real impulse response in place of its built-in one).
-    virtual bool supportsImpulseResponseFile() const { return false; }
-    virtual bool loadImpulseResponseFile(const juce::File&) { return false; }
+    // Override for pedals with user-loadable impulse response slots (e.g. a
+    // cab where each mic can be swapped from its built-in synthetic IR to a
+    // real captured one). The Inspector shows a Load/Clear row per name
+    // returned here. Empty by default - most pedals have none.
+    virtual std::vector<juce::String> getImpulseResponseSlotNames() const { return {}; }
+    virtual bool loadImpulseResponseFile(int /*slot*/, const juce::File&) { return false; }
+    // Back to the slot's built-in (synthetic) IR.
+    virtual void clearImpulseResponse(int /*slot*/) {}
+    // The loaded file's name, or empty if the slot is using its built-in IR.
+    virtual juce::String getImpulseResponseFileName(int /*slot*/) const { return {}; }
+
+    // State a preset must save that isn't a PedalParameter (e.g. which IR
+    // file each slot has loaded). A void var (the default) means "nothing
+    // extra" and the preset omits it entirely, so pedals without any keep
+    // writing exactly the files they always did. setExtraState() is called
+    // AFTER the pedal is prepared and in the chain, with whatever
+    // getExtraState() produced (or a void var for an older preset).
+    virtual juce::var getExtraState() const { return {}; }
+    virtual void setExtraState(const juce::var&) {}
 
     // Optional custom visual editor, shown in the Inspector window in
     // place of the generic knob grid for whichever parameters it manages

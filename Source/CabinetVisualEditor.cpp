@@ -164,15 +164,22 @@ void CabinetVisualEditor::paint(juce::Graphics& g)
 {
     // Status line - see header comment for why this exists: neither of
     // these states used to be visible anywhere in this editor.
-    auto usingLoadedIR = pedal.isUsingLoadedIR();
+    // Slots 0/1 are the left cab's Mic A/B (the ones this editor's markers
+    // move). A slot holding a real IR ignores Type/Position - they're baked
+    // into the capture - so its marker is dimmed the same way an unheard
+    // Mic B is, and the status line says so.
+    auto micALoaded = pedal.isSlotLoaded(0);
+    auto micBLoaded = pedal.isSlotLoaded(1);
     auto micBInactive = micBlend.get() < 1.0f; // Mic Blend reads ~0% - moving Mic B currently does nothing audible
 
-    if (usingLoadedIR)
+    if (micALoaded || micBLoaded)
     {
         g.setColour(ModernColours::accent);
         g.setFont(juce::Font(12.0f, juce::Font::bold));
-        juce::String msg = "IR loaded - dragging Mic A replaces it";
-        if (micBInactive)
+        juce::String msg = micALoaded && micBLoaded ? "Real IRs in Mic A and B - position doesn't apply"
+                                                     : (micALoaded ? "Real IR in Mic A - its position doesn't apply"
+                                                                   : "Real IR in Mic B - its position doesn't apply");
+        if (micBInactive && ! micBLoaded)
             msg += "; Mic B inactive (Blend 0%)";
         g.drawText(msg, statusArea.toFloat(), juce::Justification::centred);
     }
@@ -238,8 +245,8 @@ void CabinetVisualEditor::paint(juce::Graphics& g)
 
     auto micAPos = markerPositionFor(micPositionA.get() / 100.0f, micASide);
     auto micBPos = markerPositionFor(micPositionB.get() / 100.0f, micBSide);
-    drawMic(micAPos, micAYOffset, micAColour, "A", false);
-    drawMic(micBPos, micBYOffset, micBColour, "B", micBInactive);
+    drawMic(micAPos, micAYOffset, micAColour, "A", micALoaded);
+    drawMic(micBPos, micBYOffset, micBColour, "B", micBInactive || micBLoaded);
 }
 
 void CabinetVisualEditor::mouseDown(const juce::MouseEvent& e)

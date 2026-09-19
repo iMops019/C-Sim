@@ -361,13 +361,19 @@ juce::AudioBuffer<float> generateMicIR(double sampleRate, int cabType, int micTy
     auto modeSet = modeSetForCab(cabType);
     auto position = juce::jlimit(0.0f, 1.0f, positionFraction);
 
-    // Two near-identical channels with a small delay/phase offset between
-    // them, approximating this one mic's own capsule width for some
-    // stereo image (separate from the two-mic Blend, which is a whole
-    // second IR generated with its own settings).
+    // Both channels carry the SAME signal: one mic on one cab is a mono
+    // source. This used to render the right channel with a 0.3 ms delay
+    // and a phase offset "for some stereo image", which measured (through
+    // the real pedal) as a real defect rather than width: the two channels
+    // were the same waveform 13 samples apart (correlation 0.97-0.99 at
+    // that lag), so (a) summing to mono put a -25 dB notch at ~1.7 kHz,
+    // right in the cab's presence region, (b) Width's mono end (Width = 0)
+    // was exactly that notched sum, and (c) the time offset pulled the
+    // image to the left (precedence effect) instead of centering it. Real
+    // stereo now comes from where it comes from on a real cab: the room
+    // mic pair (generateRoomIR), dual cabs, and two-mic blends.
     renderMicChannel(buffer.getWritePointer(0), numSamples, sampleRate, modeSet.modes, modeSet.count, position, 0.0f, 0);
-    renderMicChannel(buffer.getWritePointer(1), numSamples, sampleRate, modeSet.modes, modeSet.count, position, 0.35f,
-                      static_cast<int>(0.0003 * sampleRate));
+    buffer.copyFrom(1, 0, buffer, 0, 0, numSamples);
 
     // Only a low cut here - no baked-in high cut. CabinetPedal has its own
     // adjustable High Cut trim applied after mixing; baking a second,
@@ -393,6 +399,37 @@ juce::AudioBuffer<float> generateMicIR(double sampleRate, int cabType, int micTy
     buffer.applyGain(0.9f / juce::jmax(0.0001f, buffer.getMagnitude(0, numSamples)));
 
     return buffer;
+}
+
+juce::AudioBuffer<float> generateMixedMicIR(double sampleRate, int cabType, int secondCabType, float mix01,
+                                             int micType, float positionFraction)
+{
+    auto first = generateMicIR(sampleRate, cabType, micType, positionFraction);
+    auto mix = juce::jlimit(0.0f, 1.0f, mix01);
+
+    if (secondCabType < 0 || secondCabType >= numCabTypes || secondCabType == cabType || mix <= 0.0f)
+        return first;
+
+    auto second = generateMicIR(sampleRate, secondCabType, micType, positionFraction);
+    if (mix >= 1.0f)
+        return second;
+
+    // Both IRs are the same length (generateMicIR's fixed 80 ms).
+    auto numSamples = juce::jmin(first.getNumSamples(), second.getNumSamples());
+    juce::AudioBuffer<float> blended(first.getNumChannels(), numSamples);
+
+    for (int ch = 0; ch < blended.getNumChannels(); ++ch)
+    {
+        auto* out = blended.getWritePointer(ch);
+        auto* a = first.getReadPointer(ch);
+        auto* b = second.getReadPointer(ch);
+        for (int n = 0; n < numSamples; ++n)
+            out[n] = (1.0f - mix) * a[n] + mix * b[n];
+    }
+
+    // Same peak level every generated mic IR is normalised to.
+    blended.applyGain(0.9f / juce::jmax(0.0001f, blended.getMagnitude(0, numSamples)));
+    return blended;
 }
 
 juce::AudioBuffer<float> generateRoomIR(double sampleRate, bool isStudio)

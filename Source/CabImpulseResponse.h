@@ -45,6 +45,28 @@ namespace CabImpulseResponse
     // audible axis, not just a label.
     juce::AudioBuffer<float> generateMicIR(double sampleRate, int cabType, int micType, float positionFraction);
 
+    // generateMicIR with a SECOND speaker type mixed in - a mixed-speaker
+    // cab (the classic example: a 4x12 with V30s and Greenbacks together,
+    // for the V30's bite plus the Greenback's warmth). `mix01` is the
+    // balance the mic hears: 0 = only cabType's speakers, 1 = only
+    // secondCabType's, 0.5 = an even blend. Both use the same mic type and
+    // position, and are summed in phase - a mic roughly equidistant from
+    // the two speakers, so there is no extra arrival-time offset between
+    // them (that would be a comb filter on top of the tonal blend; the
+    // Distance controls are where arrival time lives).
+    //
+    // The blend is linear on the IRs themselves, deliberately: what the
+    // two speakers share (the on-axis attack transient every table
+    // renders in phase) stays at full level, while what they DON'T share
+    // (their different resonant modes) simply adds - which is what
+    // actually happens when two different speakers are heard together.
+    //
+    // secondCabType < 0 (or the same as cabType) or mix01 <= 0 returns
+    // exactly generateMicIR's result, bit for bit - a cab with no second
+    // speaker is completely unchanged.
+    juce::AudioBuffer<float> generateMixedMicIR(double sampleRate, int cabType, int secondCabType, float mix01,
+                                                 int micType, float positionFraction);
+
     // How many speakers this cab actually has, for the Inspector's visual
     // cab drawing to lay out the right number of speaker circles - not
     // used by the DSP itself (the resonant-mode model doesn't simulate

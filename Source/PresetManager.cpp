@@ -30,6 +30,10 @@ namespace PresetManager
                 entryObj->setProperty("bypassed", pedal->bypassed.load());
                 entryObj->setProperty("params", juce::var(paramsObj));
 
+                auto extra = pedal->getExtraState();
+                if (! extra.isVoid())
+                    entryObj->setProperty("extra", extra);
+
                 chainArray.add(juce::var(entryObj));
             }
 
@@ -66,7 +70,11 @@ namespace PresetManager
 
                 pedal->bypassed.store(static_cast<bool>(entryVar.getProperty("bypassed", false)));
 
+                // Extra (non-parameter) state needs a prepared pedal, so it
+                // goes in AFTER addPedal() - which is what prepares it.
+                auto* rawPedal = pedal.get();
                 chain.addPedal(std::move(pedal));
+                rawPedal->setExtraState(entryVar.getProperty("extra", juce::var()));
             }
         }
     }

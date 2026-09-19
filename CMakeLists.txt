@@ -308,6 +308,137 @@ add_executable(OrangeDualTerrorPreampTest
 )
 target_include_directories(OrangeDualTerrorPreampTest PRIVATE Source/dsp)
 
+add_executable(DualCabMixTest
+    Tests/DualCabMixTest.cpp
+)
+target_include_directories(DualCabMixTest PRIVATE Source/dsp)
+
+# Links the real (JUCE-based) IR generator, but only juce_audio_basics -
+# no audio device, no GUI - so it still runs as a plain console test.
+add_executable(CabDualTest
+    Tests/CabDualTest.cpp
+    Source/CabImpulseResponse.cpp
+)
+target_link_libraries(CabDualTest
+    PRIVATE
+        juce::juce_audio_basics
+    PUBLIC
+        juce::juce_recommended_config_flags
+)
+
+# Drives the REAL CabinetPedal (real Convolution, real WAV files) - JUCE-
+# coupled, so it links the same JUCE modules as the app and the two source
+# files the pedal itself pulls in for its Inspector editor.
+add_executable(CabPedalIRTest
+    Tests/CabPedalIRTest.cpp
+    Source/CabinetPedal.cpp
+    Source/CabImpulseResponse.cpp
+    Source/CabinetVisualEditor.cpp
+    Source/ModernLookAndFeel.cpp
+)
+target_compile_definitions(CabPedalIRTest
+    PRIVATE
+        JUCE_WEB_BROWSER=0
+        JUCE_USE_CURL=0
+)
+target_link_libraries(CabPedalIRTest
+    PRIVATE
+        juce::juce_audio_utils
+        juce::juce_dsp
+    PUBLIC
+        juce::juce_recommended_config_flags
+)
+
+add_executable(MicPlacementTest
+    Tests/MicPlacementTest.cpp
+)
+target_include_directories(MicPlacementTest PRIVATE Source/dsp)
+
+add_executable(CabMicPlacementTest
+    Tests/CabMicPlacementTest.cpp
+    Source/CabinetPedal.cpp
+    Source/CabImpulseResponse.cpp
+    Source/CabinetVisualEditor.cpp
+    Source/ModernLookAndFeel.cpp
+)
+target_compile_definitions(CabMicPlacementTest
+    PRIVATE
+        JUCE_WEB_BROWSER=0
+        JUCE_USE_CURL=0
+)
+target_link_libraries(CabMicPlacementTest
+    PRIVATE
+        juce::juce_audio_utils
+        juce::juce_dsp
+    PUBLIC
+        juce::juce_recommended_config_flags
+)
+
+add_executable(CabStereoTest
+    Tests/CabStereoTest.cpp
+    Source/CabinetPedal.cpp
+    Source/CabImpulseResponse.cpp
+    Source/CabinetVisualEditor.cpp
+    Source/ModernLookAndFeel.cpp
+)
+target_compile_definitions(CabStereoTest
+    PRIVATE
+        JUCE_WEB_BROWSER=0
+        JUCE_USE_CURL=0
+)
+target_link_libraries(CabStereoTest
+    PRIVATE
+        juce::juce_audio_utils
+        juce::juce_dsp
+    PUBLIC
+        juce::juce_recommended_config_flags
+)
+
+add_executable(CabMixedSpeakerTest
+    Tests/CabMixedSpeakerTest.cpp
+    Source/CabinetPedal.cpp
+    Source/CabImpulseResponse.cpp
+    Source/CabinetVisualEditor.cpp
+    Source/ModernLookAndFeel.cpp
+)
+target_compile_definitions(CabMixedSpeakerTest
+    PRIVATE
+        JUCE_WEB_BROWSER=0
+        JUCE_USE_CURL=0
+)
+target_link_libraries(CabMixedSpeakerTest
+    PRIVATE
+        juce::juce_audio_utils
+        juce::juce_dsp
+    PUBLIC
+        juce::juce_recommended_config_flags
+)
+
+add_executable(SpeakerCompressionTest
+    Tests/SpeakerCompressionTest.cpp
+)
+target_include_directories(SpeakerCompressionTest PRIVATE Source/dsp)
+
+add_executable(CabSpeakerPushTest
+    Tests/CabSpeakerPushTest.cpp
+    Source/CabinetPedal.cpp
+    Source/CabImpulseResponse.cpp
+    Source/CabinetVisualEditor.cpp
+    Source/ModernLookAndFeel.cpp
+)
+target_compile_definitions(CabSpeakerPushTest
+    PRIVATE
+        JUCE_WEB_BROWSER=0
+        JUCE_USE_CURL=0
+)
+target_link_libraries(CabSpeakerPushTest
+    PRIVATE
+        juce::juce_audio_utils
+        juce::juce_dsp
+    PUBLIC
+        juce::juce_recommended_config_flags
+)
+
 add_executable(AmpSpeakerLoadTest
     Tests/AmpSpeakerLoadTest.cpp
 )

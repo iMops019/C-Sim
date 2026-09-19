@@ -29,18 +29,14 @@
 // edge or centre the capsule is aimed.
 //
 // Real bug report this editor used to give zero feedback about ("I move
-// [the mics] around and I don't hear anything"): loading a real IR file
-// (CabinetPedal::loadImpulseResponseFile) resets Mic Blend to 0 by
-// design (so a real capture isn't heard comb-filtered against an
-// invented synthetic Mic B), which means Mic B's marker can be dragged
-// anywhere with zero audible effect until Mic Blend is raised again -
-// and touching Mic A's own marker/type SILENTLY discards the loaded file
-// and replaces it with a synthesized cab (Mic A's Type/Position always
-// resynthesizes - there's no way to "reposition" a mic on an already-
-// captured real IR, that position is physically baked in). Both are
-// real, by-design behavior, not bugs - but this editor used to show
-// neither state, so it just looked broken. Now shows an "IR loaded"
-// badge and dims/labels Mic B when Mic Blend is near 0.
+// [the mics] around and I don't hear anything"): the first real IR loaded
+// into a cab resets Mic Blend to 0 by design (so a real capture isn't
+// heard comb-filtered against an invented synthetic Mic B), which means
+// Mic B's marker can be dragged anywhere with zero audible effect until
+// Mic Blend is raised again - and a mic whose slot holds a real IR ignores
+// its Position entirely (that position is physically baked into the
+// capture). Both are real, by-design behavior, not bugs - so this editor
+// shows a status line for them and dims the affected marker.
 class CabinetVisualEditor : public juce::Component,
                              private juce::Timer
 {
