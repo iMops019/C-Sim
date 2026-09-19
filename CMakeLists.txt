@@ -478,3 +478,86 @@ target_link_libraries(MesaLoadTest
     PUBLIC
         juce::juce_recommended_config_flags
 )
+
+add_executable(SpeakerLoadLinkTest
+    Tests/SpeakerLoadLinkTest.cpp
+)
+target_include_directories(SpeakerLoadLinkTest PRIVATE Source/dsp)
+
+
+# A real Cabinet and a real Mesa run as a chain: the amp's OR60 Resonance must
+# act on the speaker the Cabinet is modeling (Source/SpeakerLoadLink.h).
+add_executable(CabAmpLinkTest
+    Tests/CabAmpLinkTest.cpp
+    Source/CabinetPedal.cpp
+    Source/CabImpulseResponse.cpp
+    Source/CabinetVisualEditor.cpp
+    Source/ModernLookAndFeel.cpp
+    Source/MesaTripleRectifierPedal.cpp
+    Source/dsp/MesaTripleRectifierAmp.cpp
+    Source/dsp/OrangeDualTerrorPreamp.cpp
+    Source/dsp/PowerAmpStage.cpp
+    Source/dsp/KorenTriodeStage.cpp
+    Source/dsp/Oversampler4x.cpp
+    Source/dsp/DiodeClipperStage.cpp
+)
+target_compile_definitions(CabAmpLinkTest
+    PRIVATE
+        JUCE_WEB_BROWSER=0
+        JUCE_USE_CURL=0
+)
+target_link_libraries(CabAmpLinkTest
+    PRIVATE
+        juce::juce_audio_utils
+        juce::juce_dsp
+    PUBLIC
+        juce::juce_recommended_config_flags
+)
+
+# Developer tool (not a test): renders the Cabinet's Inspector window offscreen
+# to PNGs - `EditorSnapshot <output dir>` - for checking layouts without the app.
+add_executable(EditorSnapshot
+    Tests/EditorSnapshot.cpp
+    Source/CabinetPedal.cpp
+    Source/CabImpulseResponse.cpp
+    Source/CabinetVisualEditor.cpp
+    Source/ModernLookAndFeel.cpp
+    Source/PedalInspectorWindow.cpp
+    Source/KnobComponent.cpp
+)
+target_compile_definitions(EditorSnapshot
+    PRIVATE
+        JUCE_WEB_BROWSER=0
+        JUCE_USE_CURL=0
+)
+target_link_libraries(EditorSnapshot
+    PRIVATE
+        juce::juce_audio_utils
+        juce::juce_dsp
+    PUBLIC
+        juce::juce_recommended_config_flags
+)
+
+# Functional check of the Cabinet's visual editor: drives the real controls and
+# mouse through JUCE's API (no window) and reads the parameters back.
+add_executable(CabEditorTest
+    Tests/CabEditorTest.cpp
+    Source/CabinetPedal.cpp
+    Source/CabImpulseResponse.cpp
+    Source/CabinetVisualEditor.cpp
+    Source/ModernLookAndFeel.cpp
+    Source/KnobComponent.cpp
+)
+target_compile_definitions(CabEditorTest
+    PRIVATE
+        JUCE_WEB_BROWSER=0
+        JUCE_USE_CURL=0
+        JUCE_MODAL_LOOPS_PERMITTED=1   # lets the test run the message loop so the editor's timers fire
+)
+target_link_libraries(CabEditorTest
+    PRIVATE
+        juce::juce_audio_utils
+        juce::juce_dsp
+    PUBLIC
+        juce::juce_recommended_config_flags
+)

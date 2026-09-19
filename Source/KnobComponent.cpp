@@ -20,7 +20,11 @@ KnobComponent::KnobComponent(PedalParameter& parameterToControl)
             auto index = juce::jlimit(0, (int) parameter.valueLabels.size() - 1, (int) std::round(v));
             return parameter.valueLabels[(size_t) index];
         };
-        slider.setValue(parameter.get(), juce::dontSendNotification); // refresh text box with the new formatter
+        // Refresh the text box with the new formatter. NOT setValue() with the
+        // value it already has: JUCE skips the update when the value is
+        // unchanged, which left every labeled knob (Live/Studio, Polarity,
+        // ...) showing a raw number until the user touched it.
+        slider.updateText();
     }
 
     addAndMakeVisible(slider);

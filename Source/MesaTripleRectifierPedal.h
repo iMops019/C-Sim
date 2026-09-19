@@ -7,6 +7,7 @@
 #include "dsp/MesaTripleRectifierAmp.h"
 #include "dsp/OrangeDualTerrorPreamp.h"
 #include "dsp/PowerAmpStage.h"
+#include "SpeakerLoadLink.h"
 
 #include <memory>
 #include <vector>
@@ -147,8 +148,13 @@
 // and shapes the response from the load's real curve, but it does not
 // model less feedback also meaning MORE distortion in that band (the shelf
 // version did, by boosting into the saturation). It assumes a typical 8
-// ohm 12" speaker; only that speaker's resonance frequency is sourced (see
-// the module for what is and isn't). They only act while OR60 is On; the
+// ohm 12" speaker by default; only its resonance frequency is sourced (see
+// the module for what is and isn't). When a Cabinet is in the chain it
+// publishes the speaker it is modeling (SpeakerLoadLink.h) and the amp
+// drives THAT one - so the Resonance boost lands on the selected cab's own
+// impedance peak (a Fender 1x10 resonates near 115 Hz, an open-back 2x12
+// near 75 Hz). A bypassed or removed Cabinet stops publishing and the amp
+// falls back to the default speaker. They only act while OR60 is On; the
 // Dual Terror itself has no such controls, so nothing here comes from its
 // schematic.
 class MesaTripleRectifierPedal : public Pedal
@@ -173,6 +179,7 @@ private:
     juce::IIRFilter depthFilters[maxChannels];
     AmpSpeakerLoad::Filter loadFilters[maxChannels];
     double currentSampleRate = 44100.0;
+    AmpSpeakerLoad::Speaker drivenSpeaker; // what the load model is currently driving (default until a Cabinet publishes)
 
     PedalParameter gain  { "Gain",   0.0f, 100.0f, 50.0f };
     PedalParameter volume{ "Volume", 0.0f, 100.0f, 70.0f };

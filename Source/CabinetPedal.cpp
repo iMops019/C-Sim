@@ -6,6 +6,13 @@
 
 CabinetPedal::CabinetPedal() = default;
 
+// Stop telling any amp which speaker it's driving as soon as this Cabinet
+// goes away, rather than letting it wait out the link's timeout.
+CabinetPedal::~CabinetPedal()
+{
+    SpeakerLoadLink::clear();
+}
+
 void CabinetPedal::prepare(double sampleRate, int maximumBlockSize, int numChannels)
 {
     currentSampleRate = sampleRate;
@@ -324,6 +331,16 @@ void CabinetPedal::process(float* const* channelData, int numChannels, int numSa
     auto cabChanged = (cabSignature != lastCab);
     lastCab = cabSignature;
 
+    // Tell any amp in the chain which speaker it is driving (see
+    // SpeakerLoadLink.h): the left cab, with a mixed second speaker blended
+    // in by the same Spk Mix that blends the IRs.
+    {
+        auto speaker = AmpSpeakerLoad::speakerForCab(cabType);
+        if (secondType >= 0)
+            speaker = AmpSpeakerLoad::mixSpeakers(speaker, AmpSpeakerLoad::speakerForCab(secondType), speakerMix.get() / 100.0);
+        SpeakerLoadLink::publish(speaker);
+    }
+
     reloadMicIRIfNeeded(0, cabChanged);
     reloadMicIRIfNeeded(1, cabChanged);
 
@@ -486,6 +503,9 @@ void CabinetPedal::process(float* const* channelData, int numChannels, int numSa
     auto weights = channelsToUse >= 2 ? DualCabMix::weightsForSpread(spread.get() / 100.0f)
                                        : DualCabMix::Weights { 0.5f, 0.5f };
 
+    // Mic Spread needs two sides to pan across; a mono chain ignores it.
+    auto micSpreadAmount = channelsToUse >= 2 ? micSpread.get() / 100.0f : 0.0f;
+
     for (int ch = 0; ch < channelsToUse; ++ch)
     {
         auto* out = channelData[ch];
@@ -497,14 +517,14 @@ void CabinetPedal::process(float* const* channelData, int numChannels, int numSa
 
         for (int n = 0; n < numSamples; ++n)
         {
-            auto micSignal = DualCabMix::mixMics(a[n], b[n], blend, invertA, invertB);
+            auto micSignal = DualCabMix::mixMicsWithSpread(a[n], b[n], blend, invertA, invertB, micSpreadAmount, ch);
 
             if (dualActive)
             {
                 // Each side's own cab is its "primary" (Cab on the left,
                 // Cab R on the right); the other side's cab is the
                 // secondary, weighted in by how far Spread is pulled in.
-                auto rightCab = DualCabMix::mixMics(a2[n], b2[n], blend, invertA, invertB);
+                auto rightCab = DualCabMix::mixMicsWithSpread(a2[n], b2[n], blend, invertA, invertB, micSpreadAmount, ch);
                 auto primary = (ch == 0) ? micSignal : rightCab;
                 auto secondary = (ch == 0) ? rightCab : micSignal;
                 micSignal = weights.primary * primary + weights.secondary * secondary;
@@ -569,17 +589,23 @@ void CabinetPedal::process(float* const* channelData, int numChannels, int numSa
 std::vector<PedalParameter*> CabinetPedal::getParameters()
 {
     return { &cab, &micTypeA, &micPositionA, &micTypeB, &micPositionB, &micBlend,
-             &polarityA, &polarityB, &distanceA, &distanceB, &cabRight, &spread,
+             &polarityA, &polarityB, &micSpread, &distanceA, &distanceB, &cabRight, &spread,
              &speaker2, &speakerMix, &speaker2R, &speakerMixR, &speakerPush,
              &liveStudio, &roomAmount, &lowCut, &highCut, &resonance, &air, &width, &level };
 }
 
 std::unique_ptr<juce::Component> CabinetPedal::createCustomEditor()
 {
-    return std::make_unique<CabinetVisualEditor>(*this, cab, micTypeA, micPositionA, micTypeB, micPositionB, micBlend);
+    return std::make_unique<CabinetVisualEditor>(*this, CabinetVisualEditor::Bindings {
+        cab, micTypeA, micPositionA, micTypeB, micPositionB, micBlend,
+        distanceA, distanceB, cabRight, speaker2, speakerMix, speaker2R, speakerMixR, speakerPush });
 }
 
+// What the editor CONTROLS, so the Inspector doesn't also show each as a knob.
+// (Mic Blend and Spk Push are only read by it - for the dimming and the heat
+// glow - and stay as knobs.)
 std::vector<PedalParameter*> CabinetPedal::getCustomEditorHandledParameters()
 {
-    return { &cab, &micTypeA, &micPositionA, &micTypeB, &micPositionB };
+    return { &cab, &micTypeA, &micPositionA, &micTypeB, &micPositionB,
+             &distanceA, &distanceB, &cabRight, &speaker2, &speakerMix, &speaker2R, &speakerMixR };
 }

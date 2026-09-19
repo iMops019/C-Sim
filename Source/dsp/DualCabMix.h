@@ -33,6 +33,18 @@ namespace DualCabMix
         return { 0.5f * (1.0f + s), 0.5f * (1.0f - s) };
     }
 
+    // The stereo-pair alternative to a blend: Mic A on the left, Mic B on the
+    // right, the way an engineer pans two mics. spread01 crossfades from
+    // "both mics blended into both sides" (0 - exactly mixMics, bit for bit)
+    // to "Mic A only on the left, Mic B only on the right" (1). Unlike a
+    // time offset (see the stereo note in CabImpulseResponse), two different
+    // mics really are different signals - real width that sums to mono as
+    // the ordinary two-mic blend, with no comb of its own. channel 0 = left,
+    // 1 = right. At spread 1 the Blend knob no longer matters: each side has
+    // one mic.
+    inline float mixMicsWithSpread(float micA, float micB, float blend01, bool invertA, bool invertB,
+                                   float spread01, int channel) noexcept;
+
     // One cab's two mics, blended (0 = all Mic A, 1 = all Mic B), each with
     // an optional polarity flip. Inverting one mic of a blend is one of the
     // oldest tricks in studio miking: correlated content (the fundamental
@@ -42,5 +54,19 @@ namespace DualCabMix
     {
         auto blend = clamp01(blend01);
         return (invertA ? -micA : micA) * (1.0f - blend) + (invertB ? -micB : micB) * blend;
+    }
+
+    inline float mixMicsWithSpread(float micA, float micB, float blend01, bool invertA, bool invertB,
+                                   float spread01, int channel) noexcept
+    {
+        auto blended = mixMics(micA, micB, blend01, invertA, invertB);
+        auto spread = clamp01(spread01);
+        if (spread <= 0.0f)
+            return blended;
+
+        auto own = channel == 0 ? (invertA ? -micA : micA) : (invertB ? -micB : micB);
+        if (spread >= 1.0f)
+            return own; // exact at the endpoint, not "within a rounding error of it"
+        return blended + (own - blended) * spread;
     }
 }

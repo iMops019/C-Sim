@@ -205,7 +205,14 @@ PedalInspectorWindow::PedalInspectorWindow(Pedal& pedalToShow, std::function<voi
     setUsingNativeTitleBar(true);
     setContentOwned(new InspectorContent(pedal, std::move(onRemoveCallback)), true);
     setResizable(true, false);
-    centreWithSize(getWidth(), getHeight());
+
+    // A pedal with a big custom editor (the Cabinet) plus knobs plus IR rows
+    // can want more height than a laptop screen has. The knob grid scrolls
+    // and the window is resizable, so start no taller than the usable
+    // screen area (less the title bar and some breathing room).
+    auto* primary = juce::Desktop::getInstance().getDisplays().getPrimaryDisplay();
+    auto maxHeight = primary != nullptr ? primary->userArea.getHeight() - 60 : getHeight();
+    centreWithSize(getWidth(), juce::jmin(getHeight(), juce::jmax(400, maxHeight)));
     setVisible(true);
 }
 

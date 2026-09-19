@@ -6,6 +6,7 @@
 #include "CabImpulseResponse.h"
 #include "dsp/MicPlacement.h"
 #include "dsp/SpeakerCompression.h"
+#include "SpeakerLoadLink.h"
 
 #include <vector>
 
@@ -32,6 +33,7 @@ class CabinetPedal : public Pedal
 {
 public:
     CabinetPedal();
+    ~CabinetPedal() override;
 
     juce::String getName() const override { return "Cabinet"; }
 
@@ -160,6 +162,10 @@ private:
     // Flip either mic's polarity in the blend - see dsp/DualCabMix.h.
     PedalParameter polarityA    { "Polarity A",  0.0f, 1.0f,   0.0f, { "Normal", "Invert" } };
     PedalParameter polarityB    { "Polarity B",  0.0f, 1.0f,   0.0f, { "Normal", "Invert" } };
+    // Pan the two mics apart: 0 (default) = both mics blended into both sides
+    // (unchanged); 100 = Mic A only on the left, Mic B only on the right - a
+    // real stereo pair with genuine width. See DualCabMix::mixMicsWithSpread.
+    PedalParameter micSpread    { "Mic Spread",  0.0f, 100.0f, 0.0f };
     // How far each mic sits from the cab: 0 = 1 inch, 100 = 18 inches. Sets
     // that mic's proximity-effect bass boost AND (via the difference
     // between the two mics) their relative arrival time - see

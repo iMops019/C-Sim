@@ -96,6 +96,57 @@ namespace AmpSpeakerLoad
 
     constexpr double pi = 3.14159265358979323846;
 
+    inline bool sameSpeaker(const Speaker& a, const Speaker& b) noexcept
+    {
+        return a.re == b.re && a.le == b.le && a.fs == b.fs && a.qms == b.qms && a.qes == b.qes && a.resistive == b.resistive;
+    }
+
+    // The electrical model of each Cabinet cab type's speaker(s), in the same
+    // order as CabImpulseResponse::CabType (0 V30 4x12, 1 Greenback 4x12,
+    // 2 open-back 2x12, 3 1x12 combo, 4 Fender 1x10, 5 Fender 2x10, 6 Fender
+    // 1x12, 7 Fender 4x12). What differs is the resonance frequency - the
+    // one thing with a source: Celestion says classic speakers resonate
+    // around 75 Hz, rising to 90-100 Hz in a large closed-back cabinet, and a
+    // smaller cone resonates higher - and, for the 10" cones, a lower
+    // voice-coil resistance and inductance. Every number is a judgment call
+    // in that spirit; the point is that the amp's Resonance boost lands on
+    // the speaker actually selected.
+    inline Speaker speakerForCab(int cabType) noexcept
+    {
+        Speaker s;
+        switch (cabType)
+        {
+            case 0:  s.fs = 90.0;  break;                          // 4x12 V30, closed back
+            case 1:  s.fs = 82.0;  break;                          // 4x12 Greenback, closed back
+            case 2:  s.fs = 75.0;  break;                          // open-back 2x12: no enclosure to raise it
+            case 3:  s.fs = 95.0;  break;                          // 1x12 combo: a small, boxy enclosure
+            case 4:  s.fs = 115.0; s.re = 6.0; s.le = 0.0005; break; // Fender 1x10: small cone
+            case 5:  s.fs = 105.0; s.re = 6.0; s.le = 0.0005; break; // Fender 2x10
+            case 6:  s.fs = 85.0;  break;                          // Fender 1x12
+            case 7:  s.fs = 85.0;  break;                          // Fender 4x12
+            default: break;
+        }
+        return s;
+    }
+
+    // Two speakers heard together (Spk Mix): parameters blended, with the
+    // resonance frequency interpolated on a log scale (frequencies blend by
+    // ratio, not by difference).
+    inline Speaker mixSpeakers(const Speaker& a, const Speaker& b, double mix01) noexcept
+    {
+        auto t = std::min(1.0, std::max(0.0, mix01));
+        if (t <= 0.0) return a;
+        if (t >= 1.0) return b;
+
+        Speaker s = a;
+        s.re = a.re + (b.re - a.re) * t;
+        s.le = a.le + (b.le - a.le) * t;
+        s.qms = a.qms + (b.qms - a.qms) * t;
+        s.qes = a.qes + (b.qes - a.qes) * t;
+        s.fs = a.fs * std::pow(b.fs / a.fs, t);
+        return s;
+    }
+
     // The speaker's impedance at one frequency.
     inline std::complex<double> speakerImpedance(const Speaker& sp, double freqHz)
     {
@@ -208,9 +259,34 @@ namespace AmpSpeakerLoad
             fs = sampleRate;
             neutralInverse = tustin(inverseOf(build(0.5, 0.5)));
             haveControls = false;
+            prepared = true;
             setControls(0.5f, 0.5f);
             reset();
         }
+
+        // Swap the speaker the amp is driving (e.g. when the Cabinet's cab
+        // changes). Rebuilds both halves - the closed loop and the neutral
+        // inverse it is divided by - so the neutral setting stays exactly
+        // flat for any speaker. The running states are physical (currents
+        // and voltages) and are carried across; a switch between two very
+        // different speakers can still make a brief transient.
+        void setSpeaker(const Speaker& newSpeaker)
+        {
+            if (sameSpeaker(speaker, newSpeaker))
+                return;
+            speaker = newSpeaker;
+            if (! prepared)
+                return;
+
+            auto forwardState = forward.x;
+            auto inverseState = neutralInverse.x;
+            neutralInverse = tustin(inverseOf(build(0.5, 0.5)));
+            neutralInverse.x = inverseState;
+            forward = tustin(build(std::min(1.0f, std::max(0.0f, lastPresence)), std::min(1.0f, std::max(0.0f, lastResonance))));
+            forward.x = forwardState;
+        }
+
+        const Speaker& getSpeaker() const noexcept { return speaker; }
 
         void reset() noexcept
         {
@@ -388,7 +464,8 @@ namespace AmpSpeakerLoad
         Amp amp;
         double fs = 48000.0;
         bool haveControls = false;
-        float lastPresence = 0.0f, lastResonance = 0.0f;
+        bool prepared = false;
+        float lastPresence = 0.5f, lastResonance = 0.5f;
 
         Discrete forward, neutralInverse;
     };

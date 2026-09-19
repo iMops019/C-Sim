@@ -53,6 +53,20 @@ void MesaTripleRectifierPedal::process(float* const* channelData, int numChannel
     // OR60 add-on, only used while it's On.
     auto orOn = orSwitch.get() >= 0.5f;
 
+    // Which speaker is on the end of this amp: the Cabinet's, if one is in
+    // the chain and processing; otherwise the generic default. A read that
+    // collided with the Cabinet's write keeps what we had.
+    if (orOn)
+    {
+        AmpSpeakerLoad::Speaker linked;
+        switch (SpeakerLoadLink::read(linked))
+        {
+            case SpeakerLoadLink::ReadResult::ok:   drivenSpeaker = linked; break;
+            case SpeakerLoadLink::ReadResult::none: drivenSpeaker = AmpSpeakerLoad::Speaker {}; break;
+            case SpeakerLoadLink::ReadResult::busy: break;
+        }
+    }
+
     for (int ch = 0; ch < numChannelsToProcess; ++ch)
     {
         // OR60 add-on, in front of the Mesa. Skipped entirely while Off,
@@ -105,6 +119,7 @@ void MesaTripleRectifierPedal::process(float* const* channelData, int numChannel
         if (orOn)
         {
             auto& load = loadFilters[ch];
+            load.setSpeaker(drivenSpeaker);
             load.setControls(presence.get() / 100.0f, resonance.get() / 100.0f);
             for (int n = 0; n < numSamples; ++n)
                 channelData[ch][n] = load.processSample(channelData[ch][n]);

@@ -150,6 +150,80 @@ int main()
         check(dip > -12.0, "no deep notch when a default-Room signal is summed to mono");
     }
 
+    std::printf("\n=== Mic Spread: a real stereo pair from the two mics ===\n");
+    {
+        // Two reference pedals: Mic A alone, and Mic B alone. Everything else identical.
+        auto reference = [&](float blend)
+        {
+            auto p = std::make_unique<CabinetPedal>();
+            prepared(*p);
+            param(*p, "Mic Blend")->set(blend);
+            param(*p, "Room")->set(0.0f);
+            for (int i = 0; i < 4; ++i)
+            {
+                render(*p);
+                std::this_thread::sleep_for(std::chrono::milliseconds(50));
+            }
+            return p;
+        };
+        auto micOnlyA = reference(0.0f), micOnlyB = reference(100.0f);
+        auto a = render(*micOnlyA), b = render(*micOnlyB);
+
+        auto correlation = [](const std::vector<float>& x, const std::vector<float>& y)
+        {
+            double xy = 0.0, xx = 0.0, yy = 0.0;
+            for (size_t n = 0; n < std::min(x.size(), y.size()); ++n)
+            {
+                xy += static_cast<double>(x[n]) * y[n];
+                xx += static_cast<double>(x[n]) * x[n];
+                yy += static_cast<double>(y[n]) * y[n];
+            }
+            return xy / std::sqrt(std::max(xx * yy, 1.0e-30));
+        };
+
+        CabinetPedal spreadPedal;
+        prepared(spreadPedal);
+        param(spreadPedal, "Room")->set(0.0f);
+        for (int i = 0; i < 4; ++i)
+        {
+            render(spreadPedal);
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        }
+
+        // Default (Mic Spread 0): both mics blended into both sides - centered, as before.
+        auto centered = render(spreadPedal);
+        double centeredDiff = 0.0;
+        for (size_t n = 0; n < centered.left.size(); ++n)
+            centeredDiff = std::max(centeredDiff, static_cast<double>(std::abs(centered.left[n] - centered.right[n])));
+        check(centeredDiff < 1.0e-6, "Mic Spread 0 is centered: left and right are the same signal");
+
+        param(spreadPedal, "Mic Spread")->set(100.0f);
+        auto panned = render(spreadPedal);
+        auto leftIsA = correlation(panned.left, a.left), rightIsB = correlation(panned.right, b.right);
+        std::printf("  Mic Spread 100: left vs Mic A alone %.5f, right vs Mic B alone %.5f, side/mid %+.1f dB (Room 0%%)\n",
+                     leftIsA, rightIsB, sideToMidDb(panned));
+        check(leftIsA > 0.9999, "at Mic Spread 100 the left output is exactly Mic A");
+        check(rightIsB > 0.9999, "and the right output is exactly Mic B");
+        check(sideToMidDb(panned) > -15.0, "with no room at all, that is real stereo width (the mics differ) - the centered default reads -inf");
+
+        // Mono: (L + R)/2 is an even blend of the two mics - no notch of its own.
+        std::vector<float> mono(panned.left.size()), evenBlend(panned.left.size());
+        for (size_t n = 0; n < mono.size(); ++n)
+        {
+            mono[n] = 0.5f * (panned.left[n] + panned.right[n]);
+            evenBlend[n] = 0.5f * (a.left[n] + b.right[n]);
+        }
+        check(correlation(mono, evenBlend) > 0.9999, "summed to mono it is exactly an even blend of the two mics");
+
+        // Width still works on top of it.
+        param(spreadPedal, "Width")->set(0.0f);
+        auto narrowed = render(spreadPedal);
+        double monoDiff = 0.0;
+        for (size_t n = 0; n < narrowed.left.size(); ++n)
+            monoDiff = std::max(monoDiff, static_cast<double>(std::abs(narrowed.left[n] - narrowed.right[n])));
+        check(monoDiff < 1.0e-6, "and Width 0 still collapses it to mono");
+    }
+
     std::printf("\n%s\n", allPassed ? "ALL CHECKS PASSED" : "SOME CHECKS FAILED");
     return allPassed ? 0 : 1;
 }
