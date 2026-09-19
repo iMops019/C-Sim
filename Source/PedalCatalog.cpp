@@ -16,6 +16,7 @@
 #include "TransposePedal.h"
 #include "PrecisionDrivePedal.h"
 #include "DistortionPedal.h"
+#include "CentaurDrivePedal.h"
 #include "PalmMuteTamerPedal.h"
 #include "MorningGloryPedal.h"
 #include "DynaCompPedal.h"
@@ -36,6 +37,7 @@ namespace PedalCatalog
                  { "Transpose", [] { return std::make_unique<TransposePedal>(); } },
                  { "Precision Drive", [] { return std::make_unique<PrecisionDrivePedal>(); } },
                  { "Distortion", [] { return std::make_unique<DistortionPedal>(); } },
+                 { "Centaur Drive", [] { return std::make_unique<CentaurDrivePedal>(); } },
                  { "Palm Mute Tamer", [] { return std::make_unique<PalmMuteTamerPedal>(); } },
                  { "Morning Glory", [] { return std::make_unique<MorningGloryPedal>(); } },
                  { "Dyna Comp", [] { return std::make_unique<DynaCompPedal>(); } },

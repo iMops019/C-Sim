@@ -46,6 +46,7 @@ target_sources(CSim
         Source/TransposePedal.cpp
         Source/PrecisionDrivePedal.cpp
         Source/DistortionPedal.cpp
+        Source/CentaurDrivePedal.cpp
         Source/PalmMuteTamerPedal.cpp
         Source/FenderStyleAmpPedal.cpp
         Source/MesaTripleRectifierPedal.cpp
@@ -66,6 +67,7 @@ target_sources(CSim
         Source/dsp/Doubler.cpp
         Source/dsp/PitchShifter.cpp
         Source/dsp/PrecisionDriveStage.cpp
+        Source/dsp/CentaurDriveStage.cpp
         Source/dsp/SolidStatePowerAmpStage.cpp
         Source/dsp/PalmMuteTamer.cpp
         Source/dsp/FenderStyleAmp.cpp
@@ -231,6 +233,14 @@ add_executable(PrecisionDriveStageTest
     Source/dsp/Oversampler4x.cpp
 )
 target_include_directories(PrecisionDriveStageTest PRIVATE Source/dsp)
+
+add_executable(CentaurDriveStageTest
+    Tests/CentaurDriveStageTest.cpp
+    Source/dsp/CentaurDriveStage.cpp
+    Source/dsp/DiodeClipperStage.cpp
+    Source/dsp/Oversampler4x.cpp
+)
+target_include_directories(CentaurDriveStageTest PRIVATE Source/dsp)
 
 add_executable(SolidStatePowerAmpStageTest
     Tests/SolidStatePowerAmpStageTest.cpp
