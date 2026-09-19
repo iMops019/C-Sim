@@ -28,6 +28,7 @@ public:
 private:
     void openSettings();
     void openTuner();
+    void startNewPreset();
     void openSavePresetDialog();
     void openNewPresetNameDialog();
     void confirmOverwritePreset(const juce::String& presetName);
@@ -38,6 +39,7 @@ private:
 
     juce::TextButton settingsButton{"Settings"};
     juce::TextButton tunerButton{"Tuner"};
+    juce::TextButton newPresetButton{"New Preset"};
     juce::TextButton savePresetButton{"Save Preset..."};
     juce::TextButton loadPresetButton{"Load Preset..."};
     juce::TextButton saveSettingsButton{"Save Settings"};

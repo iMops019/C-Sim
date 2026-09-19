@@ -15,6 +15,11 @@ MainComponent::MainComponent()
     addAndMakeVisible(tunerButton);
     tunerButton.onClick = [this] { openTuner(); };
 
+    addAndMakeVisible(newPresetButton);
+    newPresetButton.onClick = [this] { startNewPreset(); };
+    newPresetButton.setTooltip("Clear the rack and start again from a blank slate. Save the current "
+                                "chain first if you want to keep it.");
+
     addAndMakeVisible(savePresetButton);
     savePresetButton.onClick = [this] { openSavePresetDialog(); };
     savePresetButton.setTooltip("Save the current chain as a named preset you can reload later.");
@@ -193,6 +198,8 @@ void MainComponent::resized()
     loadPresetButton.setBounds(topBar.removeFromRight(100).removeFromTop(28));
     topBar.removeFromRight(8);
     savePresetButton.setBounds(topBar.removeFromRight(100).removeFromTop(28));
+    topBar.removeFromRight(8);
+    newPresetButton.setBounds(topBar.removeFromRight(100).removeFromTop(28));
     topBar.removeFromRight(10);
 
     auto volumeArea = topBar.removeFromRight(200);
@@ -235,6 +242,26 @@ void MainComponent::openTuner()
     }
 
     tunerWindow = std::make_unique<TunerWindow>(tunerEngine, [this] { tunerWindow = nullptr; });
+}
+
+void MainComponent::startNewPreset()
+{
+    // Nothing to lose in an empty rack: just leave it blank.
+    if (signalChain.getPedalsInOrder().empty())
+        return;
+
+    auto* alertWindow = new juce::AlertWindow("New Preset",
+                                               "Clear the rack and start from a blank slate? Anything you haven't "
+                                               "saved as a preset will be lost.",
+                                               juce::AlertWindow::WarningIcon);
+    alertWindow->addButton("Clear Rack", 1, juce::KeyPress(juce::KeyPress::returnKey));
+    alertWindow->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
+
+    alertWindow->enterModalState(true, juce::ModalCallbackFunction::create([this](int result)
+    {
+        if (result == 1)
+            signalChain.clear();
+    }), true);
 }
 
 void MainComponent::openSavePresetDialog()
