@@ -24,6 +24,7 @@
 #include "FuzzChorusPedal.h"
 #include "FenderStyleAmpPedal.h"
 #include "MesaTripleRectifierPedal.h"
+#include "SuperSonic22Pedal.h"
 
 namespace PedalCatalog
 {
@@ -48,7 +49,8 @@ namespace PedalCatalog
     std::vector<PedalListComponent::CatalogItem> amps()
     {
         return { { "Fender Style Amp (WIP)", [] { return std::make_unique<FenderStyleAmpPedal>(); } },
-                 { "Mesa Triple Rectifier (WIP)", [] { return std::make_unique<MesaTripleRectifierPedal>(); } } };
+                 { "Mesa Triple Rectifier (WIP)", [] { return std::make_unique<MesaTripleRectifierPedal>(); } },
+                 { "Fender Super-Sonic 22", [] { return std::make_unique<SuperSonic22Pedal>(); } } };
     }
 
     std::vector<PedalListComponent::CatalogItem> cabs()

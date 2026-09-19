@@ -50,6 +50,7 @@ target_sources(CSim
         Source/PalmMuteTamerPedal.cpp
         Source/FenderStyleAmpPedal.cpp
         Source/MesaTripleRectifierPedal.cpp
+        Source/SuperSonic22Pedal.cpp
         Source/MorningGloryPedal.cpp
         Source/DynaCompPedal.cpp
         Source/WardenPedal.cpp
@@ -73,6 +74,7 @@ target_sources(CSim
         Source/dsp/FenderStyleAmp.cpp
         Source/dsp/MesaTripleRectifierAmp.cpp
         Source/dsp/OrangeDualTerrorPreamp.cpp
+        Source/dsp/SuperSonic22Preamp.cpp
         Source/dsp/BassmanToneStack.cpp
         Source/dsp/MorningGloryStage.cpp
         Source/dsp/DynaCompStage.cpp
@@ -318,6 +320,19 @@ add_executable(OrangeDualTerrorPreampTest
 )
 target_include_directories(OrangeDualTerrorPreampTest PRIVATE Source/dsp)
 
+add_executable(NodalNetworkTest
+    Tests/NodalNetworkTest.cpp
+)
+target_include_directories(NodalNetworkTest PRIVATE Source/dsp)
+
+add_executable(SuperSonic22PreampTest
+    Tests/SuperSonic22PreampTest.cpp
+    Source/dsp/SuperSonic22Preamp.cpp
+    Source/dsp/KorenTriodeStage.cpp
+    Source/dsp/Oversampler4x.cpp
+)
+target_include_directories(SuperSonic22PreampTest PRIVATE Source/dsp)
+
 add_executable(DualCabMixTest
     Tests/DualCabMixTest.cpp
 )
@@ -472,6 +487,30 @@ target_compile_definitions(MesaLoadTest
         JUCE_USE_CURL=0
 )
 target_link_libraries(MesaLoadTest
+    PRIVATE
+        juce::juce_audio_utils
+        juce::juce_dsp
+    PUBLIC
+        juce::juce_recommended_config_flags
+)
+
+# Drives the REAL Super-Sonic 22 pedal (JUCE-coupled): the wiring of preamp ->
+# reverb -> power stage, the knob mapping, and levels.
+add_executable(SuperSonic22PedalTest
+    Tests/SuperSonic22PedalTest.cpp
+    Source/SuperSonic22Pedal.cpp
+    Source/dsp/SuperSonic22Preamp.cpp
+    Source/dsp/PowerAmpStage.cpp
+    Source/dsp/SpringReverb.cpp
+    Source/dsp/KorenTriodeStage.cpp
+    Source/dsp/Oversampler4x.cpp
+)
+target_compile_definitions(SuperSonic22PedalTest
+    PRIVATE
+        JUCE_WEB_BROWSER=0
+        JUCE_USE_CURL=0
+)
+target_link_libraries(SuperSonic22PedalTest
     PRIVATE
         juce::juce_audio_utils
         juce::juce_dsp
