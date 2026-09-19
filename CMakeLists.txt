@@ -70,6 +70,7 @@ target_sources(CSim
         Source/dsp/PalmMuteTamer.cpp
         Source/dsp/FenderStyleAmp.cpp
         Source/dsp/MesaTripleRectifierAmp.cpp
+        Source/dsp/OrangeDualTerrorPreamp.cpp
         Source/dsp/BassmanToneStack.cpp
         Source/dsp/MorningGloryStage.cpp
         Source/dsp/DynaCompStage.cpp
@@ -298,3 +299,41 @@ add_executable(PillowChorusStageTest
     Source/dsp/PillowChorusStage.cpp
 )
 target_include_directories(PillowChorusStageTest PRIVATE Source/dsp)
+
+add_executable(OrangeDualTerrorPreampTest
+    Tests/OrangeDualTerrorPreampTest.cpp
+    Source/dsp/OrangeDualTerrorPreamp.cpp
+    Source/dsp/KorenTriodeStage.cpp
+    Source/dsp/Oversampler4x.cpp
+)
+target_include_directories(OrangeDualTerrorPreampTest PRIVATE Source/dsp)
+
+add_executable(AmpSpeakerLoadTest
+    Tests/AmpSpeakerLoadTest.cpp
+)
+target_include_directories(AmpSpeakerLoadTest PRIVATE Source/dsp)
+
+# Drives the REAL Mesa pedal (JUCE-coupled): checks the OR60 Presence/Resonance
+# wiring against the amp/speaker load model.
+add_executable(MesaLoadTest
+    Tests/MesaLoadTest.cpp
+    Source/MesaTripleRectifierPedal.cpp
+    Source/dsp/MesaTripleRectifierAmp.cpp
+    Source/dsp/OrangeDualTerrorPreamp.cpp
+    Source/dsp/PowerAmpStage.cpp
+    Source/dsp/KorenTriodeStage.cpp
+    Source/dsp/Oversampler4x.cpp
+    Source/dsp/DiodeClipperStage.cpp
+)
+target_compile_definitions(MesaLoadTest
+    PRIVATE
+        JUCE_WEB_BROWSER=0
+        JUCE_USE_CURL=0
+)
+target_link_libraries(MesaLoadTest
+    PRIVATE
+        juce::juce_audio_utils
+        juce::juce_dsp
+    PUBLIC
+        juce::juce_recommended_config_flags
+)

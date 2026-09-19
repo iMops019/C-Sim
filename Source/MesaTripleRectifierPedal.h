@@ -3,7 +3,9 @@
 #include <juce_audio_basics/juce_audio_basics.h>
 
 #include "Pedal.h"
+#include "dsp/AmpSpeakerLoad.h"
 #include "dsp/MesaTripleRectifierAmp.h"
+#include "dsp/OrangeDualTerrorPreamp.h"
 #include "dsp/PowerAmpStage.h"
 
 #include <memory>
@@ -112,6 +114,43 @@
 // High above), continuing this pedal's "one real amp per knob"
 // Frankenstein pattern (Low=Mesa's own switches, Mid=Peavey 6505,
 // High=Revv Generator, Depth=Diezel VH4).
+//
+// OR60: an experimental add-on switch. Off (the default) is the Mesa
+// exactly as described above - none of the Orange code runs. On puts an
+// Orange preamp stage in FRONT of the Mesa cascade, the way you'd stack
+// one amp's preamp into another to hear what it adds:
+//   guitar -> Orange preamp (dsp/OrangeDualTerrorPreamp.h) -> the normal
+//   Mesa path -> the amp/speaker load model (Presence/Resonance).
+// The preamp itself is the Orange Dual Terror's two channels, traced from
+// Orange's own Dual Terror PCB schematic (Rev.2, 2008): "OR Channel"
+// picks the punchy Tiny Terror circuit or the Fat channel, with that
+// amp's own Gain and Tone and a Volume that sits after its overdriven
+// phase splitter. "OR Bright" is the OR60's 3-position Bright switch
+// (shimmer / neutral / bite).
+//
+// Presence and Resonance are the OR60's power-amp negative-feedback
+// controls - Orange's manual puts both in the NFB loop, Presence shaping
+// the top end and Resonance the bottom - and the OR60 is a 2025 amp with no
+// published schematic. So they are modeled from what those controls
+// physically ARE (see dsp/AmpSpeakerLoad.h): the amp is a feedback loop
+// driving a guitar speaker's impedance curve (a resonance peak near 85 Hz,
+// an inductive rise up high), and the knobs remove feedback below/above a
+// corner. Less feedback = lower damping factor = the amp behaves more like
+// a current source, driving more voltage into the speaker's high-impedance
+// regions: Resonance up lets the bass bloom, Presence up opens the top; down
+// tightens them. 50 on either knob is exactly flat (the model is divided
+// by its own neutral response), and the range is about -5/+6 dB each.
+//
+// It sits AFTER the power amp, where the impedance interaction physically
+// happens. This replaces an earlier version that used two fixed +/-6 dB
+// shelves ahead of the power amp: the physical model is level-independent
+// and shapes the response from the load's real curve, but it does not
+// model less feedback also meaning MORE distortion in that band (the shelf
+// version did, by boosting into the saturation). It assumes a typical 8
+// ohm 12" speaker; only that speaker's resonance frequency is sourced (see
+// the module for what is and isn't). They only act while OR60 is On; the
+// Dual Terror itself has no such controls, so nothing here comes from its
+// schematic.
 class MesaTripleRectifierPedal : public Pedal
 {
 public:
@@ -127,10 +166,12 @@ public:
 private:
     static constexpr int maxChannels = 2;
     std::vector<std::unique_ptr<MesaTripleRectifierAmp>> amps;
+    std::vector<std::unique_ptr<OrangeDualTerrorPreamp>> orangeAmps;
     std::vector<std::unique_ptr<PowerAmpStage>> powerAmps;
     juce::IIRFilter midFilters[maxChannels];
     juce::IIRFilter highFilters[maxChannels];
     juce::IIRFilter depthFilters[maxChannels];
+    AmpSpeakerLoad::Filter loadFilters[maxChannels];
     double currentSampleRate = 44100.0;
 
     PedalParameter gain  { "Gain",   0.0f, 100.0f, 50.0f };
@@ -147,6 +188,17 @@ private:
     // 0 = off, 100 = full boost - see header comment above for the real,
     // sourced 80Hz center (Diezel VH4's own documented Deep control).
     PedalParameter depth  { "Depth",  0.0f, 100.0f, 0.0f };
+
+    // The OR60 add-on - see the header comment above. Everything below is
+    // inert while the switch is Off.
+    PedalParameter orSwitch { "OR60",       0.0f, 1.0f,   0.0f, { "Off", "On" } };
+    PedalParameter orChannel{ "OR Channel", 0.0f, 1.0f,   0.0f, { "Tiny Terror", "Fat" } };
+    PedalParameter orGain   { "OR Gain",    0.0f, 100.0f, 50.0f };
+    PedalParameter orTone   { "OR Tone",    0.0f, 100.0f, 60.0f };
+    PedalParameter orVolume { "OR Volume",  0.0f, 100.0f, 50.0f };
+    PedalParameter orBright { "OR Bright",  0.0f, 2.0f,   1.0f, { "Shimmer", "Neutral", "Bite" } };
+    PedalParameter presence { "Presence",   0.0f, 100.0f, 50.0f };
+    PedalParameter resonance{ "Resonance",  0.0f, 100.0f, 50.0f };
 
     // Real, sourced sag endpoints reused from FenderStyleAmpPedal's Twin
     // Reverb Tight switch (see header comment) - Diode+Bold's dynamics

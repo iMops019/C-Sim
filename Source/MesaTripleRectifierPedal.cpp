@@ -11,12 +11,17 @@ void MesaTripleRectifierPedal::prepare(double sampleRate, int maximumBlockSize, 
     currentSampleRate = sampleRate;
 
     amps.clear();
+    orangeAmps.clear();
     powerAmps.clear();
     for (int ch = 0; ch < juce::jmax(1, numChannels); ++ch)
     {
         amps.push_back(std::make_unique<MesaTripleRectifierAmp>(sampleRate));
+        orangeAmps.push_back(std::make_unique<OrangeDualTerrorPreamp>(sampleRate));
         powerAmps.push_back(std::make_unique<PowerAmpStage>(sampleRate));
     }
+
+    for (auto& filter : loadFilters)
+        filter.prepare(sampleRate);
 }
 
 void MesaTripleRectifierPedal::process(float* const* channelData, int numChannels, int numSamples)
@@ -45,8 +50,27 @@ void MesaTripleRectifierPedal::process(float* const* channelData, int numChannel
     auto depthCoeffs = juce::IIRCoefficients::makeLowShelf(
         currentSampleRate, depthFrequencyHz, 0.707, juce::Decibels::decibelsToGain(depthDb));
 
+    // OR60 add-on, only used while it's On.
+    auto orOn = orSwitch.get() >= 0.5f;
+
     for (int ch = 0; ch < numChannelsToProcess; ++ch)
     {
+        // OR60 add-on, in front of the Mesa. Skipped entirely while Off,
+        // so the Mesa path below is untouched. While Off its filter state
+        // goes stale, so flipping it On mid-note can click once - fine
+        // for an experimental toggle.
+        if (orOn)
+        {
+            auto& orange = *orangeAmps[static_cast<size_t>(ch)];
+            orange.setChannel(orChannel.get() >= 0.5f ? OrangeDualTerrorPreamp::Channel::Fat
+                                                      : OrangeDualTerrorPreamp::Channel::TinyTerror);
+            orange.setGain(orGain.get() / 100.0f);
+            orange.setTone(orTone.get() / 100.0f);
+            orange.setVolume(orVolume.get() / 100.0f);
+            orange.setBright(juce::roundToInt(orBright.get()));
+            orange.processBlock(channelData[ch], channelData[ch], numSamples);
+        }
+
         auto& amp = *amps[static_cast<size_t>(ch)];
         amp.setGain(gain.get() / 100.0f);
         amp.setVolume(volume.get() / 100.0f);
@@ -73,10 +97,23 @@ void MesaTripleRectifierPedal::process(float* const* channelData, int numChannel
         // hard-clip into harsh digital distortion.
         for (int n = 0; n < numSamples; ++n)
             channelData[ch][n] = std::tanh(channelData[ch][n]);
+
+        // OR60 Presence/Resonance: the amp's feedback loop into the
+        // speaker's impedance curve - see the header comment. Skipped while
+        // Off (the Mesa path is untouched); the filter's states are
+        // physical, so it picks up cleanly when switched on.
+        if (orOn)
+        {
+            auto& load = loadFilters[ch];
+            load.setControls(presence.get() / 100.0f, resonance.get() / 100.0f);
+            for (int n = 0; n < numSamples; ++n)
+                channelData[ch][n] = load.processSample(channelData[ch][n]);
+        }
     }
 }
 
 std::vector<PedalParameter*> MesaTripleRectifierPedal::getParameters()
 {
-    return { &gain, &volume, &low, &mid, &high, &depth };
+    return { &gain, &volume, &low, &mid, &high, &depth,
+             &orSwitch, &orChannel, &orGain, &orTone, &orVolume, &orBright, &presence, &resonance };
 }
