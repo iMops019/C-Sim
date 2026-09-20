@@ -22,6 +22,10 @@
 #include "DynaCompPedal.h"
 #include "WardenPedal.h"
 #include "FuzzChorusPedal.h"
+#include "TubeScreamerPedal.h"
+#include "BluesDriverPedal.h"
+#include "HoofPedal.h"
+#include "BossTr2Pedal.h"
 #include "FenderStyleAmpPedal.h"
 #include "MesaTripleRectifierPedal.h"
 #include "SuperSonic22Pedal.h"
@@ -44,7 +48,12 @@ namespace PedalCatalog
                  { "Morning Glory", [] { return std::make_unique<MorningGloryPedal>(); } },
                  { "Dyna Comp", [] { return std::make_unique<DynaCompPedal>(); } },
                  { "The Warden", [] { return std::make_unique<WardenPedal>(); } },
-                 { "Fuzz Chorus", [] { return std::make_unique<FuzzChorusPedal>(); } } };
+                 { "Fuzz Chorus", [] { return std::make_unique<FuzzChorusPedal>(); } },
+                 { "Tube Screamer TS808", [] { return std::make_unique<TubeScreamerPedal>(TubeScreamerPedal::Model::TS808); } },
+                 { "Tube Screamer TS9", [] { return std::make_unique<TubeScreamerPedal>(TubeScreamerPedal::Model::TS9); } },
+                 { "Boss BD-2 Blues Driver", [] { return std::make_unique<BluesDriverPedal>(); } },
+                 { "EQD Hoof Fuzz", [] { return std::make_unique<HoofPedal>(); } },
+                 { "Boss TR-2 Tremolo", [] { return std::make_unique<BossTr2Pedal>(); } } };
     }
 
     std::vector<PedalListComponent::CatalogItem> amps()

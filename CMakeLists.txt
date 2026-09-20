@@ -56,6 +56,10 @@ target_sources(CSim
         Source/DynaCompPedal.cpp
         Source/WardenPedal.cpp
         Source/FuzzChorusPedal.cpp
+        Source/TubeScreamerPedal.cpp
+        Source/BluesDriverPedal.cpp
+        Source/HoofPedal.cpp
+        Source/BossTr2Pedal.cpp
         Source/dsp/KorenTriodeStage.cpp
         Source/dsp/Oversampler4x.cpp
         Source/dsp/FenderToneStack.cpp
@@ -86,6 +90,10 @@ target_sources(CSim
         Source/dsp/DynaCompStage.cpp
         Source/dsp/WardenStage.cpp
         Source/dsp/FuzzFaceStage.cpp
+        Source/dsp/TubeScreamerStage.cpp
+        Source/dsp/BluesDriverStage.cpp
+        Source/dsp/HoofStage.cpp
+        Source/dsp/BossTr2Stage.cpp
         Source/dsp/PillowChorusStage.cpp
 )
 
@@ -249,6 +257,38 @@ add_executable(CentaurDriveStageTest
     Source/dsp/Oversampler4x.cpp
 )
 target_include_directories(CentaurDriveStageTest PRIVATE Source/dsp)
+
+add_executable(TubeScreamerStageTest
+    Tests/TubeScreamerStageTest.cpp
+    Source/dsp/TubeScreamerStage.cpp
+    Source/dsp/Oversampler4x.cpp
+)
+target_include_directories(TubeScreamerStageTest PRIVATE Source/dsp)
+
+add_executable(MnaNetworkTest
+    Tests/MnaNetworkTest.cpp
+)
+target_include_directories(MnaNetworkTest PRIVATE Source/dsp)
+
+add_executable(BluesDriverStageTest
+    Tests/BluesDriverStageTest.cpp
+    Source/dsp/BluesDriverStage.cpp
+    Source/dsp/Oversampler4x.cpp
+)
+target_include_directories(BluesDriverStageTest PRIVATE Source/dsp)
+
+add_executable(HoofStageTest
+    Tests/HoofStageTest.cpp
+    Source/dsp/HoofStage.cpp
+    Source/dsp/Oversampler4x.cpp
+)
+target_include_directories(HoofStageTest PRIVATE Source/dsp)
+
+add_executable(BossTr2StageTest
+    Tests/BossTr2StageTest.cpp
+    Source/dsp/BossTr2Stage.cpp
+)
+target_include_directories(BossTr2StageTest PRIVATE Source/dsp)
 
 add_executable(SolidStatePowerAmpStageTest
     Tests/SolidStatePowerAmpStageTest.cpp
@@ -682,3 +722,4 @@ target_link_libraries(CabEditorTest
     PUBLIC
         juce::juce_recommended_config_flags
 )
+
