@@ -5,6 +5,7 @@
 #include <atomic>
 #include <memory>
 
+#include "LevelMeterComponent.h"
 #include "PedalListComponent.h"
 #include "SettingsWindow.h"
 #include "SignalChainComponent.h"
@@ -52,6 +53,12 @@ private:
     juce::Label masterVolumeLabel;
     juce::Slider masterVolumeSlider;
     std::atomic<float> masterVolumeGain { 1.0f };
+
+    // Peak meters with a latched CLIP flag: the guitar input as it arrives from the audio
+    // interface (is the INTERFACE clipping?) and the final output after Master Volume
+    // (is the chain?). The rack's per-pedal meters can't tell these apart.
+    LevelMeterComponent inputMeter { "IN" };
+    LevelMeterComponent outputMeter { "OUT" };
 
     SignalChainComponent signalChain;
     PedalListComponent pedalList;

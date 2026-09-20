@@ -40,5 +40,7 @@ private:
 
     PedalParameter gain  { "Gain",  0.0f, 100.0f, 55.0f };
     PedalParameter tone  { "Tone",  0.0f, 100.0f, 50.0f };
-    PedalParameter level { "Level", 0.0f, 150.0f, 100.0f };
+    // Default Level is gain-staged: a strummed chord comes out ~3 dB louder than the guitar (RMS).
+    // At 100 it was 21 dB hotter and hard-clipped digitally (peaks over full scale).
+    PedalParameter level { "Level", 0.0f, 150.0f, 13.0f };
 };

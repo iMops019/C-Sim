@@ -36,5 +36,7 @@ private:
     PedalParameter drive  { "Drive",  0.0f, 100.0f, 25.0f };
     PedalParameter bright { "Bright", 0.0f, 100.0f, 40.0f };
     PedalParameter gate   { "Gate",   0.0f, 100.0f, 40.0f };
-    PedalParameter volume { "Volume", 0.0f, 150.0f, 100.0f };
+    // Default Volume is gain-staged: a strummed chord comes out ~3 dB louder than the guitar (RMS).
+    // At 100 it was 12 dB hotter and clipped digitally on a hard strum.
+    PedalParameter volume { "Volume", 0.0f, 150.0f, 37.0f };
 };

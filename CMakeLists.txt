@@ -16,6 +16,7 @@ target_sources(CSim
     PRIVATE
         Source/Main.cpp
         Source/MainComponent.cpp
+        Source/LevelMeterComponent.cpp
         Source/SettingsWindow.cpp
         Source/SignalChainComponent.cpp
         Source/PedalInspectorWindow.cpp
@@ -723,3 +724,18 @@ target_link_libraries(CabEditorTest
         juce::juce_recommended_config_flags
 )
 
+add_executable(LevelMeterTest
+    Tests/LevelMeterTest.cpp
+    Source/LevelMeterComponent.cpp
+)
+target_compile_definitions(LevelMeterTest
+    PRIVATE
+        JUCE_WEB_BROWSER=0
+        JUCE_USE_CURL=0
+)
+target_link_libraries(LevelMeterTest
+    PRIVATE
+        juce::juce_audio_utils
+    PUBLIC
+        juce::juce_recommended_config_flags
+)

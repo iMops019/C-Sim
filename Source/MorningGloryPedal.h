@@ -30,5 +30,7 @@ private:
     PedalParameter gainRange { "Gain Range", 0.0f, 1.0f,   0.0f, { "Lo", "Hi" } };
     PedalParameter boost     { "Boost",      0.0f, 100.0f, 0.0f };
     PedalParameter brightCut { "Bright Cut", 0.0f, 100.0f, 0.0f };
-    PedalParameter volume    { "Volume",     0.0f, 150.0f, 100.0f };
+    // Default Volume is gain-staged: a strummed chord comes out ~3 dB louder than the guitar (RMS).
+    // At 100 it was 20 dB hotter and put peaks +5 dB over digital full scale.
+    PedalParameter volume    { "Volume",     0.0f, 150.0f, 14.0f };
 };

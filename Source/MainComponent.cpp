@@ -50,6 +50,14 @@ MainComponent::MainComponent()
     };
     addAndMakeVisible(masterVolumeSlider);
 
+    inputMeter.setTooltip("Guitar input level as it arrives from the audio interface, in dBFS. If this shows CLIP "
+                          "the interface's input gain is too hot and the signal is already distorted before any "
+                          "pedal touches it - turn the gain knob on the interface down. Click to reset.");
+    outputMeter.setTooltip("Final output level after Master Volume, in dBFS. CLIP here means the chain (or Master "
+                           "Volume) is pushing the output past digital full scale. Click to reset.");
+    addAndMakeVisible(inputMeter);
+    addAndMakeVisible(outputMeter);
+
     addAndMakeVisible(signalChain);
 
     tabs.addTab("Pedals", ModernColours::background, &pedalList, false);
@@ -156,6 +164,9 @@ void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& buffer
             buffer->clear(channel, bufferToFill.startSample, bufferToFill.numSamples);
     }
 
+    // The guitar exactly as the interface delivered it (channel 0 is the guitar input).
+    inputMeter.pushPeak(buffer->getMagnitude(0, bufferToFill.startSample, bufferToFill.numSamples));
+
     // Feed the tuner from the dry, pre-effects signal so pedals don't throw
     // off pitch detection.
     tunerEngine.pushSamples(buffer->getReadPointer(0, bufferToFill.startSample), bufferToFill.numSamples);
@@ -170,8 +181,13 @@ void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& buffer
         signalChain.processBlock(channelPtrs, numChannelsForFx, bufferToFill.numSamples);
 
         auto gain = masterVolumeGain.load(std::memory_order_relaxed);
+        float outputPeak = 0.0f;
         for (int channel = 0; channel < numChannelsForFx; ++channel)
+        {
             juce::FloatVectorOperations::multiply(channelPtrs[channel], gain, bufferToFill.numSamples);
+            outputPeak = juce::jmax(outputPeak, buffer->getMagnitude(channel, bufferToFill.startSample, bufferToFill.numSamples));
+        }
+        outputMeter.pushPeak(outputPeak);
     }
 }
 
@@ -205,6 +221,12 @@ void MainComponent::resized()
     auto volumeArea = topBar.removeFromRight(200);
     masterVolumeLabel.setBounds(volumeArea.removeFromTop(16));
     masterVolumeSlider.setBounds(volumeArea.removeFromTop(24));
+
+    topBar.removeFromRight(10);
+    auto meterArea = topBar.removeFromRight(170);
+    inputMeter.setBounds(meterArea.removeFromTop(20));
+    meterArea.removeFromTop(3);
+    outputMeter.setBounds(meterArea.removeFromTop(20));
 
     statusLabel.setBounds(topBar);
 
