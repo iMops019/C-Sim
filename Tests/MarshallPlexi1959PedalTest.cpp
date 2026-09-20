@@ -3,7 +3,7 @@
 // MarshallPlexiPowerAmpTest, OutputLoadTest, PickupLoadingTest,
 // MarshallPlexi1959AmpTest); this checks the pedal around it:
 //
-//  1. the panel: ten uniquely named knobs, defaults in range, selectors labelled;
+//  1. the panel: eleven uniquely named knobs, defaults in range, selectors labelled;
 //  2. the wiring: the pedal's output is EXACTLY the amp's output, mapped from the
 //     knob values, divided by the 64V full scale and passed through the tanh
 //     guard - so a wrong mapping, scale or order shows up as a difference;
@@ -13,7 +13,9 @@
 //  5. defaults are a usable level for a guitar-level input;
 //  6. it stays finite and inside (-1, 1) at maximum settings, for any block size,
 //     mono or stereo, and the two channels of a stereo pair match;
-//  7. the sound doesn't depend on the host sample rate.
+//  7. the sound doesn't depend on the host sample rate;
+//  8. the Output trim: -12 dB at 70 / -40 dB at 0 / exactly unity at 100, the amp's waveform
+//     only scaled (the tone and distortion untouched), identical at the default, no click.
 
 #include "../Source/MarshallPlexi1959Pedal.h"
 #include "../Source/SpeakerLoadLink.h"
@@ -21,8 +23,11 @@
 
 #include <juce_audio_utils/juce_audio_utils.h>
 
+#include <cmath>
 #include <complex>
+#include <algorithm>
 #include <cstdio>
+#include <cstring>
 #include <set>
 #include <vector>
 
@@ -113,7 +118,7 @@ int main()
         std::printf("  %d knobs: ", static_cast<int>(pedal.getParameters().size()));
         for (auto* p : pedal.getParameters()) std::printf("%s  ", p->name.toRawUTF8());
         std::printf("\n");
-        check(pedal.getParameters().size() == 10 && names.size() == 10, "ten uniquely named knobs");
+        check(pedal.getParameters().size() == 11 && names.size() == 11, "eleven uniquely named knobs");
         check(inRange, "every default is inside its range");
         check(labelled, "every selector has one label per position");
         check(pedal.getName() == "Marshall 1959HW Plexi", "named for the amp");
@@ -352,6 +357,84 @@ int main()
         std::printf("  1kHz gain %.2f / %.2f / %.2f dB, 4kHz-vs-100Hz tilt %.2f / %.2f / %.2f dB (44.1 / 48 / 96 kHz)\n", lvl[0], lvl[1], lvl[2], tilt[0], tilt[1], tilt[2]);
         check(std::abs(lvl[0] - lvl[1]) < 0.5 && std::abs(lvl[2] - lvl[1]) < 0.5, "1kHz gain agrees across sample rates (0.5dB)");
         check(std::abs(tilt[0] - tilt[1]) < 1.0 && std::abs(tilt[2] - tilt[1]) < 1.0, "spectral tilt agrees across sample rates (1dB)");
+    }
+    std::printf("\n");
+
+    // --- 8. The Output trim. ---
+    std::printf("=== Output trim ===\n");
+    {
+        // The hot case that motivated it: Jumped channels, Volumes up, a guitar-level input, so the amp
+        // is hard into saturation and its output shape is far from a sine.
+        auto hot = [](float outputKnob) {
+            MarshallPlexi1959Pedal p;
+            param(p, "Channel")->set(2.0f);
+            param(p, "Volume I")->set(40.0f);
+            param(p, "Volume II")->set(40.0f);
+            param(p, "Output")->set(outputKnob);
+            return runPedal(p, 330.0, 0.25);
+        };
+        auto full = hot(100.0f), trimmed = hot(70.0f), quiet = hot(0.0f);
+
+        // The trim is applied ahead of the pedal's output tanh, so undoing the tanh recovers the amp's own
+        // waveform scaled: atanh(out) must be EXACTLY (trim gain) x atanh(out at 0 dB). That is the whole
+        // "doesn't change the tone" claim - the same waveform, so the same distortion, only smaller.
+        auto expectedGain = MarshallPlexi1959Pedal::outputTrimGain(70.0f);
+        double worstShape = 0.0, peakPre = 0.0;
+        for (size_t i = 0; i < full.size(); ++i)
+        {
+            auto pre = std::atanh(std::min(0.999999, std::abs(static_cast<double>(full[i]))));
+            peakPre = std::max(peakPre, pre);
+            auto a = std::atanh(std::clamp(static_cast<double>(full[i]), -0.999999, 0.999999)) * expectedGain;
+            auto b = std::atanh(std::clamp(static_cast<double>(trimmed[i]), -0.999999, 0.999999));
+            worstShape = std::max(worstShape, std::abs(a - b));
+        }
+        std::printf("  Output 70 = %.2f dB (gain %.4f); worst waveform difference from the 0 dB waveform x that gain: %.2e (peak %.3f)\n",
+                    20.0 * std::log10(expectedGain), expectedGain, worstShape, peakPre);
+        check(std::abs(20.0 * std::log10(expectedGain) - (-12.0)) < 0.01, "Output 70 is -12 dB (0.4 dB per step)");
+        check(MarshallPlexi1959Pedal::outputTrimGain(100.0f) == 1.0f, "Output 100 is exactly unity");
+        check(std::abs(20.0 * std::log10(MarshallPlexi1959Pedal::outputTrimGain(0.0f)) - (-40.0)) < 0.01, "Output 0 is -40 dB");
+        check(worstShape < 2.0e-3 * std::max(peakPre, 1.0), "trimmed, the amp's waveform is the same shape, just scaled (distortion unchanged)");
+        check(peakOf(trimmed) < peakOf(full) * 0.5, "and it is much quieter (-12 dB takes the peak below half)");
+        check(peakOf(quiet) < 0.02, "Output 0 is nearly silent");
+
+        // At 0 dB the pedal is bit-for-bit what it was before the knob existed.
+        MarshallPlexi1959Pedal p1, p2;
+        param(p2, "Output")->set(100.0f);
+        auto a = runPedal(p1, 330.0, 0.25), b2 = runPedal(p2, 330.0, 0.25);
+        check(a == b2, "the default Output leaves the amp exactly as it was");
+        check(param(p1, "Output")->defaultValue == 100.0f, "and 100 is its default (existing presets and sounds are unchanged)");
+
+        // Turning the knob mid-signal doesn't click: jump 100 -> 60 at a block boundary and look at the worst
+        // second difference of the output at the change against the signal's own elsewhere.
+        for (auto changeTo : { 60.0f, 0.0f })
+        {
+            const int block = 512, total = 48000, changeAt = block * 50;
+            MarshallPlexi1959Pedal p;
+            param(p, "Channel")->set(1.0f);
+            param(p, "Volume II")->set(30.0f);
+            p.prepare(48000.0, block, 2);
+            auto in = sine(196.0, 0.25, 48000.0, total);
+            std::vector<float> out(static_cast<size_t>(total));
+            for (int start = 0; start + block <= total; start += block)
+            {
+                if (start == changeAt)
+                    param(p, "Output")->set(changeTo);
+                std::vector<float> l(in.begin() + start, in.begin() + start + block), r = l;
+                float* ch[2] = { l.data(), r.data() };
+                p.process(ch, 2, block);
+                if (std::memcmp(l.data(), r.data(), sizeof(float) * static_cast<size_t>(block)) != 0)
+                    check(false, "left and right stay identical while the Output changes");
+                std::copy(l.begin(), l.end(), out.begin() + start);
+            }
+            double natural = 0.0, atChange = 0.0;
+            for (int i = 20000; i < total - 2; ++i)
+            {
+                auto d2 = std::abs(static_cast<double>(out[static_cast<size_t>(i) + 1]) - 2.0 * out[static_cast<size_t>(i)] + out[static_cast<size_t>(i) - 1]);
+                if (std::abs(i - changeAt) <= 40) atChange = std::max(atChange, d2); else natural = std::max(natural, d2);
+            }
+            std::printf("  Output 100 -> %.0f at a block boundary: worst discontinuity x%.2f the signal's own\n", changeTo, atChange / natural);
+            check(atChange < natural * 1.5, "turning Output does not click");
+        }
     }
     std::printf("\n");
 

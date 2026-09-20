@@ -11,6 +11,11 @@ void MarshallPlexi1959Pedal::prepare(double sampleRate, int maximumBlockSize, in
 {
     juce::ignoreUnused(maximumBlockSize);
 
+    // The Output trim glides to a new value over ~8ms instead of stepping at the block boundary
+    // (a step in gain is a click, once per block while the knob is turned).
+    trimAlpha = static_cast<float>(1.0 - std::exp(-1.0 / (sampleRate * 0.008)));
+    trimNow = outputTrimGain(output.get());
+
     amps.clear();
     for (int ch = 0; ch < juce::jmax(1, numChannels); ++ch)
         amps.push_back(std::make_unique<MarshallPlexi1959Amp>(sampleRate));
@@ -43,6 +48,11 @@ void MarshallPlexi1959Pedal::process(float* const* channelData, int numChannels,
     auto identicalStereo = numChannelsToProcess == 2
                            && std::memcmp(channelData[0], channelData[1], sizeof(float) * static_cast<size_t>(numSamples)) == 0;
 
+    // Every channel that is actually processed runs the same trim ramp from the same start.
+    const auto trimTarget = outputTrimGain(output.get());
+    const auto trimStart = trimNow;
+    auto trimEnd = trimStart;
+
     for (int ch = 0; ch < numChannelsToProcess; ++ch)
     {
         auto* data = channelData[ch];
@@ -71,15 +81,28 @@ void MarshallPlexi1959Pedal::process(float* const* channelData, int numChannels,
         amp.processBlock(data, data, numSamples);
         juce::FloatVectorOperations::multiply(data, 1.0f / speakerFullScaleVolts, numSamples);
 
-        // Safety ceiling, the same idiom as the toolkit's other amp pedals:
-        // transparent at normal levels, only catches an extreme combination of
-        // knobs before it would hard-clip digitally.
+        // The Output trim scales the finished waveform (so the tone and the amount of distortion are
+        // untouched), then the safety ceiling, the same idiom as the toolkit's other amp pedals:
+        // transparent at normal levels, only catches an extreme combination of knobs before it
+        // would hard-clip digitally. At 0 dB the trim is exactly 1.0 and changes nothing.
+        auto trim = trimStart;
         for (int n = 0; n < numSamples; ++n)
-            data[n] = std::tanh(data[n]);
+        {
+            if (trim != trimTarget)
+            {
+                trim += trimAlpha * (trimTarget - trim);
+                if (std::abs(trimTarget - trim) < 1.0e-6f)
+                    trim = trimTarget;
+            }
+            data[n] = std::tanh(data[n] * trim);
+        }
+        trimEnd = trim;
     }
+
+    trimNow = trimEnd;
 }
 
 std::vector<PedalParameter*> MarshallPlexi1959Pedal::getParameters()
 {
-    return { &channel, &input, &pickup, &volumeI, &volumeII, &treble, &middle, &bass, &presence, &impedance };
+    return { &channel, &input, &pickup, &volumeI, &volumeII, &treble, &middle, &bass, &presence, &impedance, &output };
 }

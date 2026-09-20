@@ -5,6 +5,7 @@
 #include "Pedal.h"
 #include "dsp/MarshallPlexi1959Amp.h"
 
+#include <cmath>
 #include <memory>
 #include <vector>
 
@@ -31,6 +32,16 @@
 //   Pickup       the kind of guitar: Off (no correction), Single coil or Humbucker.
 //                Only matters on the Low input, where the amp's input impedance is
 //                low enough to load the pickup (see dsp/PickupLoading.h).
+//   Output       a digital level trim AFTER the amp: 100 = 0 dB (unchanged), 0 = -40 dB.
+//                The real amp has no master volume and, with a normal guitar, the
+//                High Treble and Jumped channels are at or near full power at almost any
+//                Volume (the drawn 5nF bright cap bleeds signal past the knob), so this is
+//                how to bring the whole thing down WITHOUT touching the sound: it scales
+//                the finished waveform, so the tone and the amount of distortion are
+//                exactly what they were, only quieter. It sits ahead of the output tanh,
+//                so turned down it also takes that safety ceiling out of play. A Cabinet
+//                after the amp then sees a lower level, as behind a power attenuator (which
+//                matters only if its Speaker Push is on).
 //
 // The speaker on the end of the amp is the Cabinet's, if one is in the chain (see
 // SpeakerLoadLink.h): the feedback reacts to its impedance curve, so the same amp
@@ -57,6 +68,13 @@ public:
 
     std::vector<PedalParameter*> getParameters() override;
 
+    // The Output knob's gain: 100 is 0 dB (the amp exactly as it always was) and each step down
+    // is 0.4 dB, to -40 dB at 0.
+    static float outputTrimGain(float knobPercent) noexcept
+    {
+        return knobPercent >= 100.0f ? 1.0f : std::pow(10.0f, -(100.0f - knobPercent) * 0.4f / 20.0f);
+    }
+
 private:
     static constexpr int maxChannels = 2;
 
@@ -74,9 +92,15 @@ private:
     PedalParameter bass      { "Bass",      0.0f, 100.0f, 50.0f };
     PedalParameter presence  { "Presence",  0.0f, 100.0f, 50.0f };
     PedalParameter impedance { "Impedance", 0.0f, 2.0f,   2.0f, { "4 ohm", "8 ohm", "16 ohm" } };
+    PedalParameter output    { "Output",    0.0f, 100.0f, 100.0f };
 
     static constexpr float guitarVoltsPerUnit = 1.0f;
     static constexpr float speakerFullScaleVolts = 64.0f;
 
     AmpSpeakerLoad::Speaker drivenSpeaker;
+
+    // The Output trim's smoothed gain. One value for the whole pedal: each processed channel
+    // glides through the same ramp from where the last block ended, and the end point is kept.
+    float trimNow = 1.0f;
+    float trimAlpha = 0.0f;
 };
